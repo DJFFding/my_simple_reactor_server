@@ -1,4 +1,5 @@
 //网络通讯的客户端程序
+#include "InetAddress.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -34,19 +35,14 @@ int main(int argc,char* argv[])
     setsockopt(listenfd,IPPROTO_TCP,TCP_NODELAY,&opt,opt_len);
     setsockopt(listenfd,SOL_SOCKET,SO_REUSEPORT,&opt,opt_len);
 
-    struct sockaddr_in servaddr;
-    servaddr.sin_family = AF_INET;
-    servaddr.sin_addr.s_addr = inet_addr(argv[1]);
-    servaddr.sin_port = htons(atoi(argv[2]));
-    if (bind(listenfd,(sockaddr*)&servaddr,sizeof(servaddr))<0)
-    {
+    InetAddress servaddr(argv[1],atoi(argv[2]));
+    if (bind(listenfd,servaddr.addr(),sizeof(sockaddr))<0){
         perror("bind() failed");
         close(listenfd);
         return -1;
     }
     
-    if (listen(listenfd,SOMAXCONN)!=0)
-    {
+    if (listen(listenfd,SOMAXCONN)!=0){
         perror("listen() failed");
         close(listenfd);
         return -1;
@@ -73,18 +69,21 @@ int main(int argc,char* argv[])
         //如果nEvents>0，表示有事件发生的fd的数量
         for (int i = 0; i < nEvents; i++){
             if (evs[i].data.fd == listenfd){ //如果是listenfd有事件，表示有新的客户端连接
-                sockaddr_in clientaddr;
-                socklen_t len = sizeof(clientaddr);
+                sockaddr_in peeraddr;
+                socklen_t len = sizeof(peeraddr);
                 //从已连接队列中取客户端的fd
-                int clientfd = accept4(listenfd,(sockaddr*)&clientaddr,&len,SOCK_NONBLOCK);
-                printf("accept client(fd=%d,ip=%s,port=%d) ok.\n",clientfd,inet_ntoa(clientaddr.sin_addr),ntohs(clientaddr.sin_port));
+                int clientfd = accept4(listenfd,(sockaddr*)&peeraddr,&len,SOCK_NONBLOCK);
+                InetAddress clientaddr(peeraddr);
+                printf("accept client(fd=%d,ip=%s,port=%d) ok.\n",clientfd,clientaddr.ip(),clientaddr.port());
                 ev.data.fd = clientfd;
                 ev.events = EPOLLIN|EPOLLET;
                 epoll_ctl(epollfd,EPOLL_CTL_ADD,clientfd,&ev);
+                continue;
             }else{ //如果是客户端连接的fd有事件
                 if (evs[i].events&EPOLLRDHUP){
                     printf("EPOLLRDHUP client(eventfd=%d) disconnected.\n",evs[i].data.fd);
                     close(evs[i].data.fd);
+                    continue;
                 }
                 else if(evs[i].events&EPOLLIN){
                     char buffer[1024];
