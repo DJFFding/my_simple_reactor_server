@@ -12,12 +12,6 @@
 #include <fcntl.h>
 #include <sys/epoll.h>
 
-//设置非阻塞的IO
-void setnonblocking(int fd)
-{
-    fcntl(fd,F_SETFL,fcntl(fd,F_GETFL)|O_NONBLOCK);
-}
-
 int main(int argc,char* argv[])
 {
     if (argc!=3){
@@ -27,7 +21,7 @@ int main(int argc,char* argv[])
     }
     
     //创建服务器用于监听的listenfd
-    int listenfd = socket(AF_INET,SOCK_STREAM,IPPROTO_TCP);
+    int listenfd = socket(AF_INET,SOCK_STREAM|SOCK_NONBLOCK,IPPROTO_TCP);
     if (listenfd<0){
         perror("socket() failed");
         return -1;
@@ -39,7 +33,7 @@ int main(int argc,char* argv[])
     setsockopt(listenfd,SOL_SOCKET,SO_REUSEADDR,&opt,opt_len);
     setsockopt(listenfd,IPPROTO_TCP,TCP_NODELAY,&opt,opt_len);
     setsockopt(listenfd,SOL_SOCKET,SO_REUSEPORT,&opt,opt_len);
-    setnonblocking(listenfd);
+
     struct sockaddr_in servaddr;
     servaddr.sin_family = AF_INET;
     servaddr.sin_addr.s_addr = inet_addr(argv[1]);
@@ -78,11 +72,11 @@ int main(int argc,char* argv[])
         
         //如果nEvents>0，表示有事件发生的fd的数量
         for (int i = 0; i < nEvents; i++){
-            if (evs[i].data.fd == listenfd){
+            if (evs[i].data.fd == listenfd){ //如果是listenfd有事件，表示有新的客户端连接
                 sockaddr_in clientaddr;
                 socklen_t len = sizeof(clientaddr);
-                int clientfd = accept(listenfd,(sockaddr*)&clientaddr,&len);
-                setnonblocking(clientfd);
+                //从已连接队列中取客户端的fd
+                int clientfd = accept4(listenfd,(sockaddr*)&clientaddr,&len,SOCK_NONBLOCK);
                 printf("accept client(fd=%d,ip=%s,port=%d) ok.\n",clientfd,inet_ntoa(clientaddr.sin_addr),ntohs(clientaddr.sin_port));
                 ev.data.fd = clientfd;
                 ev.events = EPOLLIN|EPOLLET;
@@ -106,7 +100,7 @@ int main(int argc,char* argv[])
                             close(evs[i].data.fd); //关闭客户端的fd
                             break;
                         }
-                        if (errno==EINTR){ //读取数据的时候被信号中断，继续读取
+                        else if (errno==EINTR){ //读取数据的时候被信号中断，继续读取
                             continue;
                         }
                         else if (errno == EAGAIN||errno==EWOULDBLOCK){//全部数据已读取完毕
