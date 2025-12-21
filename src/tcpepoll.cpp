@@ -1,5 +1,7 @@
 //网络通讯的客户端程序
 #include "InetAddress.h"
+#include "Log.hpp"
+#include "Socket.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -20,39 +22,24 @@ int main(int argc,char* argv[])
         printf("example:./tcpepoll 191.168.150.126 8923\n\n");
         return -1;
     }
-    
-    //创建服务器用于监听的listenfd
-    int listenfd = socket(AF_INET,SOCK_STREAM|SOCK_NONBLOCK,IPPROTO_TCP);
-    if (listenfd<0){
-        perror("socket() failed");
-        return -1;
-    }
-    
-    //设置listenfd的属性
-    int opt=1;
-    socklen_t opt_len= sizeof(opt);
-    setsockopt(listenfd,SOL_SOCKET,SO_REUSEADDR,&opt,opt_len);
-    setsockopt(listenfd,IPPROTO_TCP,TCP_NODELAY,&opt,opt_len);
-    setsockopt(listenfd,SOL_SOCKET,SO_REUSEPORT,&opt,opt_len);
-
+    Log::SetLogWriterFunc([](const LogData& d) {
+		std::cout << Log::ToString(d) << std::endl;
+	});
+    Socket serv_sock(Socket::create_nonblocking());
+    serv_sock.set_reuse_addr(true);
+    serv_sock.set_tcp_nodelay(true);
+    serv_sock.set_reuse_port(true);
+    serv_sock.set_keepalive(true);
     InetAddress servaddr(argv[1],atoi(argv[2]));
-    if (bind(listenfd,servaddr.addr(),sizeof(sockaddr))<0){
-        perror("bind() failed");
-        close(listenfd);
-        return -1;
-    }
-    
-    if (listen(listenfd,SOMAXCONN)!=0){
-        perror("listen() failed");
-        close(listenfd);
-        return -1;
-    }
+    serv_sock.bind(servaddr);
+    serv_sock.listen();
+
     int epollfd = epoll_create(1);
 
     epoll_event ev;
-    ev.data.fd = listenfd;
+    ev.data.fd = serv_sock.fd();
     ev.events = EPOLLIN;
-    epoll_ctl(epollfd,EPOLL_CTL_ADD,listenfd,&ev);
+    epoll_ctl(epollfd,EPOLL_CTL_ADD,serv_sock.fd(),&ev);
     epoll_event evs[10];
     while (true){
         int nEvents = epoll_wait(epollfd,evs,10,-1);
@@ -68,16 +55,13 @@ int main(int argc,char* argv[])
         
         //如果nEvents>0，表示有事件发生的fd的数量
         for (int i = 0; i < nEvents; i++){
-            if (evs[i].data.fd == listenfd){ //如果是listenfd有事件，表示有新的客户端连接
-                sockaddr_in peeraddr;
-                socklen_t len = sizeof(peeraddr);
-                //从已连接队列中取客户端的fd
-                int clientfd = accept4(listenfd,(sockaddr*)&peeraddr,&len,SOCK_NONBLOCK);
-                InetAddress clientaddr(peeraddr);
-                printf("accept client(fd=%d,ip=%s,port=%d) ok.\n",clientfd,clientaddr.ip(),clientaddr.port());
-                ev.data.fd = clientfd;
+            if (evs[i].data.fd == serv_sock.fd()){ //如果是listenfd有事件，表示有新的客户端连接
+                InetAddress clientaddr;
+                Socket* clientSock = new Socket(serv_sock.accept(clientaddr));
+                printf("accept client(fd=%d,ip=%s,port=%d) ok.\n",clientSock->fd(),clientaddr.ip(),clientaddr.port());
+                ev.data.fd = clientSock->fd();
                 ev.events = EPOLLIN|EPOLLET;
-                epoll_ctl(epollfd,EPOLL_CTL_ADD,clientfd,&ev);
+                epoll_ctl(epollfd,EPOLL_CTL_ADD,clientSock->fd(),&ev);
                 continue;
             }else{ //如果是客户端连接的fd有事件
                 if (evs[i].events&EPOLLRDHUP){

@@ -1,5 +1,10 @@
 #include "InetAddress.h"
 
+InetAddress::InetAddress()
+{
+    bzero(&_addr,sizeof(sockaddr));
+}
+
 InetAddress::InetAddress(const char *ip, uint16_t port)
 {
     _addr.sin_family = AF_INET;
@@ -26,4 +31,10 @@ uint16_t InetAddress::port() const
 const sockaddr *InetAddress::addr() const
 {
     return (sockaddr*)&_addr;
+}
+
+InetAddress &InetAddress::operator=(const sockaddr_in &addr)
+{
+    _addr=addr;
+    return *this;
 }
