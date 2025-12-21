@@ -16,9 +16,13 @@ public:
     uint16_t port();
     void close_callback();  //tcp连接断开的回调函数
     void error_callback(); //tcp连接错误的回调函数
+    void set_close_callback(std::function<void(Connection*)> close_cb);
+    void set_error_callback(std::function<void(Connection*)> error_cb);
 private:
     Epoll* _ep=nullptr;
     Socket _clientSock;
     Channel* _clientChannel=nullptr;
+    std::function<void(Connection*)> _close_cb;
+    std::function<void(Connection*)> _error_cb;
 };
 #endif

@@ -33,12 +33,20 @@ uint16_t Connection::port()
 
 void Connection::close_callback()
 {
-    printf("client(eventfd=%d) disconnected.\n",fd());
-    close(fd()); //关闭客户端的fd
+    _close_cb(this);
 }
 
 void Connection::error_callback()
 {
-    printf("client(eventfd=%d) error.\n",fd());
-    close(fd());
+    _error_cb(this);
+}
+
+void Connection::set_close_callback(std::function<void(Connection*)> close_cb)
+{
+    _close_cb=close_cb;
+}
+
+void Connection::set_error_callback(std::function<void(Connection*)> error_cb)
+{
+    _error_cb = error_cb;
 }

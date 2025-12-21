@@ -12,6 +12,8 @@ public:
     ~TcpServer();
     void start();
     void new_connection(int sockClient);
+    void close_connection(Connection* conn);
+    void error_connection(Connection* conn);
 private:
     EventLoop _loop; //一个TcpServer可能有多个事件循环，现在是单线程，暂且只用到一个
     Acceptor* _acceptor;//一个TcpServer只有一个Acceptor对象

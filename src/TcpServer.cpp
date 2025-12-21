@@ -27,6 +27,29 @@ void TcpServer::start()
 void TcpServer::new_connection(int sockClient)
 {
     Connection* conn = new Connection(_loop.epObj(),sockClient);
+    conn->set_close_callback(std::bind(&TcpServer::close_connection,this,std::placeholders::_1));
+    conn->set_error_callback(std::bind(&TcpServer::error_connection,this,std::placeholders::_1));
     printf("new_connection accept client(fd=%d,ip=%s,port=%d) ok.\n",sockClient,conn->ip(),conn->port());
     _conns[sockClient]=conn;
+}
+
+void TcpServer::close_connection(Connection *conn)
+{
+    printf("client(eventfd=%d) disconnected.\n",conn->fd());
+    auto iter = _conns.find(conn->fd());
+    if (iter!=_conns.end()){
+        delete iter->second;
+        _conns.erase(iter);
+    }
+    
+}
+
+void TcpServer::error_connection(Connection *conn)
+{
+    printf("client(eventfd=%d) error.\n",conn->fd());
+    auto iter = _conns.find(conn->fd());
+    if (iter!=_conns.end()){
+        delete iter->second;
+        _conns.erase(iter);
+    }
 }
