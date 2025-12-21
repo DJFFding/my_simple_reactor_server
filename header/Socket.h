@@ -14,6 +14,8 @@ public:
     Socket(int fd);
     ~Socket();
     int fd()const;
+    const char* ip()const;
+    uint16_t port()const;
     void set_reuse_addr(bool on);
     void set_reuse_port(bool on);
     void set_tcp_nodelay(bool on);
@@ -24,6 +26,8 @@ public:
     static int create_nonblocking();
 private:
     const int _sockfd; //Socket持有的fd，在构造函数中传进来
+    std::string _ip;
+    uint16_t _port;
 };
 
 

@@ -28,7 +28,6 @@ void Acceptor::new_connection()
     InetAddress clientaddr;
     int sockClient=_serverSock->accept(clientaddr);
     _new_connection_cb(sockClient);
-    printf("accept client(fd=%d,ip=%s,port=%d) ok.\n",sockClient,clientaddr.ip(),clientaddr.port());
 }
 
 void Acceptor::set_new_connection_cb(std::function<void(int)> fn)

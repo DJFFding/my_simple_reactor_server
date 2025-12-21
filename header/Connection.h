@@ -11,6 +11,9 @@ class Connection
 public:
     Connection(Epoll* ep,int clientSock);
     ~Connection();
+    int fd();
+    const char* ip();
+    uint16_t port();
 private:
     Epoll* _ep=nullptr;
     Socket _clientSock;

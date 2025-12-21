@@ -13,6 +13,10 @@ TcpServer::TcpServer(const char *ip, uint16_t port)
 TcpServer::~TcpServer()
 {
     delete _acceptor;
+    for (auto& conn:_conns){
+        delete conn.second;
+    }
+    _conns.clear();
 }
 
 void TcpServer::start()
@@ -23,4 +27,6 @@ void TcpServer::start()
 void TcpServer::new_connection(int sockClient)
 {
     Connection* conn = new Connection(_loop.epObj(),sockClient);
+    printf("new_connection accept client(fd=%d,ip=%s,port=%d) ok.\n",sockClient,conn->ip(),conn->port());
+    _conns[sockClient]=conn;
 }

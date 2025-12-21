@@ -13,3 +13,18 @@ Connection::~Connection()
 {
     delete _clientChannel;
 }
+
+int Connection::fd() 
+{
+    return _clientSock.fd();
+}
+
+const char *Connection::ip() 
+{
+    return _clientSock.ip();
+}
+
+uint16_t Connection::port() 
+{
+    return _clientSock.port();
+}

@@ -16,6 +16,16 @@ int Socket::fd() const
     return _sockfd;
 }
 
+const char* Socket::ip()const
+{
+    return _ip.c_str();
+}
+
+uint16_t Socket::port()const
+{
+    return _port;
+}
+
 void Socket::set_reuse_addr(bool on)
 {
     int opt= on?1:0;
@@ -51,6 +61,8 @@ void Socket::bind(const InetAddress &servAddr)
         close(_sockfd);
         exit(-1);
     }
+    _ip = servAddr.ip();
+    _port = servAddr.port();
 }
 
 void Socket::listen(int nMaxConn)
@@ -68,6 +80,8 @@ int Socket::accept(InetAddress &clientAddr)
     socklen_t len = sizeof(peeraddr);
     int clientfd = accept4(_sockfd,(sockaddr*)&peeraddr,&len,SOCK_NONBLOCK);
     clientAddr=peeraddr;
+     _ip = clientAddr.ip();
+    _port = clientAddr.port();
     return clientfd;
 }
 
