@@ -1,5 +1,6 @@
 #include "Epoll.h"
 #include "Log.hpp"
+#include "Channel.h"
 using namespace std;
 
 Epoll::Epoll()
@@ -26,9 +27,39 @@ void Epoll::add_fd(int sockfd, uint32_t op)
     }
 }
 
-vector<epoll_event> Epoll::loop(int timeout)
+void Epoll::update_channel(Channel *ch)
 {
-    vector<epoll_event> evs;
+    epoll_event ev;
+    ev.data.ptr = ch;
+    ev.events = ch->events();
+    if(ch->is_in_epoll()){
+        if(epoll_ctl(_epollfd,EPOLL_CTL_MOD,ch->fd(),&ev)==-1){
+            LOG_PERRORE()<<"epoll_ctl() failed";
+            exit(-1);   
+        }
+    }else{
+        if(epoll_ctl(_epollfd,EPOLL_CTL_ADD,ch->fd(),&ev)==-1){
+            LOG_PERRORE()<<"epoll_ctl() failed";
+            exit(-1);   
+        }
+        ch->makeAddEpoll();
+    }
+}
+
+void Epoll::add_event(int fd,void *ptr, uint32_t op)
+{
+    epoll_event ev;
+    ev.data.ptr=ptr;
+    ev.events = op;
+    if(epoll_ctl(_epollfd,EPOLL_CTL_ADD,fd,&ev)==-1){
+        LOG_PERRORE()<<"epoll_ctl() failed";
+        exit(-1);   
+    }
+}
+
+vector<Channel*> Epoll::loop(int timeout)
+{
+    vector<Channel*> channels;
     bzero(_events,sizeof(_events));
     int nEvents = epoll_wait(_epollfd,_events,nMaxEvents,timeout);
     if (nEvents<0) {
@@ -38,13 +69,15 @@ vector<epoll_event> Epoll::loop(int timeout)
         //超时
     if (nEvents==0){
         printf("epoll_wait() timeout.\n");
-        return evs;
+        return channels;
     }
     //如果nEvents>0，表示有事件发生的fd的数量
     for (int i = 0; i < nEvents; i++){
-        evs.push_back(_events[i]);
+        Channel* ch =(Channel*)_events[i].data.ptr;
+        ch->set_revents(_events[i].events);
+        channels.push_back(ch);
     }
-    return evs;
+    return channels;
 }
 
 

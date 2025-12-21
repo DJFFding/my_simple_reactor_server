@@ -9,13 +9,16 @@
 #include <vector>
 #include <unistd.h>
 
+class Channel;
 class Epoll
 {
 public:
     Epoll();
     ~Epoll();
     void add_fd(int fd,uint32_t op);
-    std::vector<epoll_event> loop(int timeout=-1); //运行epoll_wait,等待事件的发生
+    void update_channel(Channel* ch); //把channel添加/更新到红黑树上
+    void add_event(int fd,void* ptr,uint32_t op);
+    std::vector<Channel*> loop(int timeout=-1);
 private:
     static constexpr int nMaxEvents=100;
     int _epollfd =-1;
