@@ -10,6 +10,7 @@ public:
     TcpServer(const char* ip,uint16_t port);
     ~TcpServer();
     void start();
+    void new_connection(int sockClient);
 private:
     EventLoop _loop; //一个TcpServer可能有多个事件循环，现在是单线程，暂且只用到一个
     Acceptor* _acceptor;//一个TcpServer只有一个Acceptor对象
