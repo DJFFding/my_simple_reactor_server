@@ -1,6 +1,7 @@
 #include "Channel.h"
 #include "InetAddress.h"
 #include "Socket.h"
+#include "Connection.h"
 
 Channel::Channel(Epoll *ep, int fd)
     :_ep(ep),_sockfd(fd)
@@ -62,11 +63,8 @@ void Channel::new_connection(Socket *pServeSock)
 {
     InetAddress clientaddr;
     int sockClient=pServeSock->accept(clientaddr);
-    Channel* clientChannel = new Channel(_ep,sockClient);
-    clientChannel->makeETMode();
-    clientChannel->enableReading();
-    clientChannel->set_read_cb(std::bind(&Channel::onMessage,clientChannel));
-    printf("accept client(fd=%d,ip=%s,port=%d) ok.\n",clientChannel->fd(),clientaddr.ip(),clientaddr.port());
+    Connection* conn = new Connection(_ep,sockClient);
+    printf("accept client(fd=%d,ip=%s,port=%d) ok.\n",sockClient,clientaddr.ip(),clientaddr.port());
 }
 
 void Channel::onMessage()
