@@ -5,6 +5,7 @@
 #include "Epoll.h"
 #include "Channel.h"
 #include "EventLoop.h"
+#include "TcpServer.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -29,18 +30,7 @@ int main(int argc,char* argv[])
     Log::SetLogWriterFunc([](const LogData& d) {
 		std::cout << Log::ToString(d) << std::endl;
 	});
-    Socket serv_sock(Socket::create_nonblocking());
-    serv_sock.set_reuse_addr(true);
-    serv_sock.set_tcp_nodelay(true);
-    serv_sock.set_reuse_port(true);
-    serv_sock.set_keepalive(true);
-    InetAddress servaddr(argv[1],atoi(argv[2]));
-    serv_sock.bind(servaddr);
-    serv_sock.listen();
-    EventLoop loop;
-    Channel* servChannel = new Channel(loop.epObj(),serv_sock.fd());
-    servChannel->set_read_cb(std::bind(&Channel::new_connection,servChannel,&serv_sock));
-    servChannel->enableReading();
-    loop.run();
+    TcpServer tcpServer(argv[1],atoi(argv[2]));
+    tcpServer.start();
     return 0;
 }
