@@ -37,14 +37,15 @@ int main(int argc,char* argv[])
     serv_sock.bind(servaddr);
     serv_sock.listen();
     Epoll ep;
-    Channel* servChannel = new Channel(&ep,serv_sock.fd(),true);
+    Channel* servChannel = new Channel(&ep,serv_sock.fd());
+    servChannel->set_read_cb(std::bind(&Channel::new_connection,servChannel,&serv_sock));
     servChannel->enableReading();
     vector<Channel*> channels;
     while (true){
         channels = ep.loop();
         //如果nEvents>0，表示有事件发生的fd的数量
         for (const auto& ch:channels){
-            ch->handle_event(&serv_sock);
+            ch->handle_event();
         }
     }
     return 0;
