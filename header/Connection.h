@@ -14,6 +14,8 @@ public:
     int fd();
     const char* ip();
     uint16_t port();
+    void close_callback();  //tcp连接断开的回调函数
+    void error_callback(); //tcp连接错误的回调函数
 private:
     Epoll* _ep=nullptr;
     Socket _clientSock;
