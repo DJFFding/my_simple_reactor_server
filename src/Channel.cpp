@@ -59,14 +59,6 @@ void Channel::handle_event()
     _readCallback();
 }
 
-void Channel::new_connection(Socket *pServeSock)
-{
-    InetAddress clientaddr;
-    int sockClient=pServeSock->accept(clientaddr);
-    Connection* conn = new Connection(_ep,sockClient);
-    printf("accept client(fd=%d,ip=%s,port=%d) ok.\n",sockClient,clientaddr.ip(),clientaddr.port());
-}
-
 void Channel::onMessage()
 {
     if (revents()&EPOLLRDHUP){

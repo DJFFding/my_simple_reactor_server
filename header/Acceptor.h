@@ -11,6 +11,7 @@ class Acceptor
 public:
     Acceptor(EventLoop* loop,const char* ip,uint16_t port);
     ~Acceptor();
+    void new_connection();
 private:
     EventLoop* _loop=nullptr;
     Socket* _serverSock=nullptr;
