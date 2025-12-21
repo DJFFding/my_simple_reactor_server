@@ -2,10 +2,11 @@
 #define _Channel_h_
 #include "Epoll.h"
 
+class Socket;
 class Channel
 {
 public:
-    Channel(Epoll* ep,int fd);
+    Channel(Epoll* ep,int fd,bool isListen=false);
     ~Channel();
     int fd()const;
     void makeETMode(); //采用边缘触发
@@ -15,11 +16,14 @@ public:
     bool is_in_epoll()const;
     uint32_t events() const;
     uint32_t revents() const;
+    bool isListen()const;
+    void handle_event(Socket* pServeSock);//用于处理epoll_wait返回的事件
 private:
     int _sockfd=-1; //Channel拥有的fd，Channel和fd是一对一的关系
     Epoll* _ep=nullptr;
     bool _inEpoll=false; //Channel是否以添加到epoll树上
     uint32_t _events=0; //_sockfd需要监听的事件
     uint32_t _revents=0; //——sockfd已发生的事件
+    bool _isListen=false;
 };
 #endif
