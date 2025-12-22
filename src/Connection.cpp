@@ -103,11 +103,26 @@ void Connection::send(const char *data, size_t size)
 
 void Connection::write_callback()
 {
-    int written = ::send(fd(),_output_buffer.data(),_output_buffer.size(),0);
-    if (written>0){
-        _output_buffer.erase(0,written);
+    while (true){
+        int written = ::send(fd(),_output_buffer.data(),_output_buffer.size(),0);
+        if (written>0){
+            _output_buffer.erase(0,written);
+            if (_output_buffer.size()==0){
+                _clientChannel->disableWriting();
+                break;
+            }
+        }else if(written==0){ //客户端连接已断开
+            close_callback();
+            break;
+        }
+        else if (errno==EINTR){ //读取数据的时候被信号中断，继续读取
+            continue;
+        }
+        else if (errno == EAGAIN||errno==EWOULDBLOCK){//全部数据已读取完毕
+            break;
+        }
     }
-    if (_output_buffer.size()==0){
-        _clientChannel->disableWriting();
-    }
+    
+    
+    
 }
