@@ -12,11 +12,11 @@ public:
     Acceptor(EventLoop* loop,const char* ip,uint16_t port);
     ~Acceptor();
     void new_connection();
-    void set_new_connection_cb(std::function<void(int)>);
+    void set_new_connection_cb(std::function<void(int,const InetAddress&)>);
 private:
     EventLoop* _loop=nullptr;
     Socket* _serverSock=nullptr;
     Channel* _acceptChannel=nullptr;
-    std::function<void(int)> _new_connection_cb;
+    std::function<void(int,const InetAddress&)> _new_connection_cb;
 };
 #endif

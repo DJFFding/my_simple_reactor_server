@@ -27,10 +27,10 @@ void Acceptor::new_connection()
 {
     InetAddress clientaddr;
     int sockClient=_serverSock->accept(clientaddr);
-    _new_connection_cb(sockClient);
+    _new_connection_cb(sockClient,clientaddr);
 }
 
-void Acceptor::set_new_connection_cb(std::function<void(int)> fn)
+void Acceptor::set_new_connection_cb(std::function<void(int,const InetAddress&)> fn)
 {
     _new_connection_cb=fn;
 }

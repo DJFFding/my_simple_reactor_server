@@ -18,7 +18,6 @@ public:
     uint32_t events() const;
     uint32_t revents() const;
     void handle_event();//用于处理epoll_wait返回的事件
-    void onMessage(); //处理对端发送过来的消息
     void set_read_cb(std::function<void()> read_cb);
     void set_close_cb(std::function<void()> close_cb);
     void set_error_cb(std::function<void()> error_cb);

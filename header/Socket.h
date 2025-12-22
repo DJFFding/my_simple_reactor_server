@@ -16,6 +16,7 @@ public:
     int fd()const;
     const char* ip()const;
     uint16_t port()const;
+    void set_ip_port(const char*ip,uint16_t port);
     void set_reuse_addr(bool on);
     void set_reuse_port(bool on);
     void set_tcp_nodelay(bool on);

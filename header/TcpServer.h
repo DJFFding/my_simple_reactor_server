@@ -11,7 +11,7 @@ public:
     TcpServer(const char* ip,uint16_t port);
     ~TcpServer();
     void start();
-    void new_connection(int sockClient);
+    void new_connection(int sockClient,const InetAddress& addr);
     void close_connection(Connection* conn);
     void error_connection(Connection* conn);
 private:

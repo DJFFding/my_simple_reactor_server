@@ -7,7 +7,7 @@
 TcpServer::TcpServer(const char *ip, uint16_t port)
     :_acceptor(new Acceptor(&_loop,ip,port))
 {
-    _acceptor->set_new_connection_cb(std::bind(&TcpServer::new_connection,this,std::placeholders::_1));
+    _acceptor->set_new_connection_cb(std::bind(&TcpServer::new_connection,this,std::placeholders::_1,std::placeholders::_2));
 }
 
 TcpServer::~TcpServer()
@@ -24,9 +24,10 @@ void TcpServer::start()
     _loop.run();
 }
 
-void TcpServer::new_connection(int sockClient)
+void TcpServer::new_connection(int sockClient,const InetAddress& addr)
 {
     Connection* conn = new Connection(_loop.epObj(),sockClient);
+    conn->set_ip_port(addr.ip(),addr.port());
     conn->set_close_callback(std::bind(&TcpServer::close_connection,this,std::placeholders::_1));
     conn->set_error_callback(std::bind(&TcpServer::error_connection,this,std::placeholders::_1));
     printf("new_connection accept client(fd=%d,ip=%s,port=%d) ok.\n",sockClient,conn->ip(),conn->port());
