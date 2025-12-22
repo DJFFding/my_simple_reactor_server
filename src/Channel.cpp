@@ -29,6 +29,24 @@ void Channel::enableReading()
     _ep->update_channel(this);
 }
 
+void Channel::enableWriting()
+{
+    _events|=EPOLLOUT;
+    _ep->update_channel(this);
+}
+
+void Channel::disableReading()
+{
+     _events&=~EPOLLIN;
+    _ep->update_channel(this);
+}
+
+void Channel::disableWriting()
+{
+     _events&=~EPOLLOUT;
+    _ep->update_channel(this);
+}
+
 void Channel::makeAddEpoll()
 {
     _inEpoll=true;
@@ -63,7 +81,7 @@ void Channel::handle_event()
         _readCallback();
     }
     if(revents()&EPOLLOUT){
-        
+        _writeCallback();
     }
     if (!(revents()&EPOLLIN||revents()&EPOLLOUT||events()&EPOLLRDHUP)){
         _errorCallback();
@@ -83,4 +101,9 @@ void Channel::set_close_cb(std::function<void()> close_cb)
 void Channel::set_error_cb(std::function<void()> error_cb)
 {
     _errorCallback = error_cb;
+}
+
+void Channel::set_write_cb(std::function<void()> write_cb)
+{
+    _writeCallback = write_cb;
 }

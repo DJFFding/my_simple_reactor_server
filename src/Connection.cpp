@@ -9,6 +9,7 @@ Connection::Connection(Epoll* ep, int clientSock)
     _clientChannel->set_read_cb(std::bind(&Connection::onMessage,this));
     _clientChannel->set_close_cb(std::bind(&Connection::close_callback,this));
     _clientChannel->set_error_cb(std::bind(&Connection::error_callback,this));
+    _clientChannel->set_write_cb(std::bind(&Connection::write_callback,this));
 }
 
 Connection::~Connection()
@@ -68,9 +69,7 @@ void Connection::onMessage()
         bzero(&buffer,sizeof(buffer));
         ssize_t nread = read(fd(),buffer,sizeof(buffer));
         if (nread>0){
-            //把接收到的报文内容原封不动的发回去
-            //printf("recv(eventfd=%d):%s\n",fd(),buffer);
-            //send(fd(),buffer,nread,0);
+            //将收到的数据放到接收缓冲区
             _input_buffer.append(buffer,nread);
         }else if(nread==0){ //客户端连接已断开
             close_callback();
@@ -92,5 +91,23 @@ void Connection::onMessage()
             }
             break;
         }
+    }
+}
+
+void Connection::send(const char *data, size_t size)
+{
+    _output_buffer.append(data,size);
+    //注册写事件
+    _clientChannel->enableWriting();
+}
+
+void Connection::write_callback()
+{
+    int written = ::send(fd(),_output_buffer.data(),_output_buffer.size(),0);
+    if (written>0){
+        _output_buffer.erase(0,written);
+    }
+    if (_output_buffer.size()==0){
+        _clientChannel->disableWriting();
     }
 }

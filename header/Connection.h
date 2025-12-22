@@ -22,6 +22,8 @@ public:
     void set_on_message_callback(std::function<void(Connection*,std::string)> on_mcb);
     void set_ip_port(const char*ip,uint16_t port);
     void onMessage();
+    void send(const char* data,size_t size); //发送数据
+    void write_callback();
 private:
     Epoll* _ep=nullptr;
     Socket _clientSock;
