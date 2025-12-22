@@ -52,6 +52,11 @@ void Connection::set_error_callback(std::function<void(Connection*)> error_cb)
     _error_cb = error_cb;
 }
 
+void Connection::set_send_complete_callback(std::function<void(Connection *)> send_ccb)
+{
+    _send_complete_cb = send_ccb;
+}
+
 void Connection::set_on_message_callback(std::function<void(Connection *, std::string)> on_mcb)
 {
     _on_message_cb = on_mcb;
@@ -109,6 +114,7 @@ void Connection::write_callback()
             _output_buffer.erase(0,written);
             if (_output_buffer.size()==0){
                 _clientChannel->disableWriting();
+                _send_complete_cb(this);
                 break;
             }
         }else if(written==0){ //客户端连接已断开
@@ -122,7 +128,4 @@ void Connection::write_callback()
             break;
         }
     }
-    
-    
-    
 }

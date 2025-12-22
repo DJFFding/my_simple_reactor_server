@@ -8,6 +8,7 @@ TcpServer::TcpServer(const char *ip, uint16_t port)
     :_acceptor(new Acceptor(&_loop,ip,port))
 {
     _acceptor->set_new_connection_cb(std::bind(&TcpServer::new_connection,this,std::placeholders::_1,std::placeholders::_2));
+    _loop.set_epoll_timeout_callback(std::bind(&TcpServer::epoll_timeout,this,std::placeholders::_1));
 }
 
 TcpServer::~TcpServer()
@@ -30,6 +31,7 @@ void TcpServer::new_connection(int sockClient,const InetAddress& addr)
     conn->set_ip_port(addr.ip(),addr.port());
     conn->set_close_callback(std::bind(&TcpServer::close_connection,this,std::placeholders::_1));
     conn->set_error_callback(std::bind(&TcpServer::error_connection,this,std::placeholders::_1));
+    conn->set_send_complete_callback(std::bind(&TcpServer::send_complete,this,std::placeholders::_1));
     conn->set_on_message_callback(std::bind(&TcpServer::on_message,this,std::placeholders::_1,std::placeholders::_2));
     printf("new_connection accept client(fd=%d,ip=%s,port=%d) ok.\n",sockClient,conn->ip(),conn->port());
     _conns[sockClient]=conn;
@@ -65,4 +67,16 @@ void TcpServer::on_message(Connection *conn, std::string message)
     tempBuf.append((char*)&len,4);
     tempBuf.append(message,0,len);
     conn->send(tempBuf.data(),tempBuf.size());
+}
+
+//数据发送完成后
+void TcpServer::send_complete(Connection *conn)
+{
+    printf("send complete.\n");
+}
+
+//epoll_wait()超时
+void TcpServer::epoll_timeout(EventLoop *loop)
+{
+    printf("epoll_wait() timeout.\n");
 }

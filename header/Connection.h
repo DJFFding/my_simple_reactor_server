@@ -19,6 +19,7 @@ public:
     void error_callback(); //tcp连接错误的回调函数
     void set_close_callback(std::function<void(Connection*)> close_cb);
     void set_error_callback(std::function<void(Connection*)> error_cb);
+    void set_send_complete_callback(std::function<void(Connection*)> send_ccb);
     void set_on_message_callback(std::function<void(Connection*,std::string)> on_mcb);
     void set_ip_port(const char*ip,uint16_t port);
     void onMessage();
@@ -31,6 +32,7 @@ private:
     std::function<void(Connection*)> _close_cb;
     std::function<void(Connection*)> _error_cb;
     std::function<void(Connection*,std::string)> _on_message_cb;
+    std::function<void(Connection*)> _send_complete_cb;
     Buffer _input_buffer; //接收缓冲区
     Buffer _output_buffer; //发送缓冲区
 };

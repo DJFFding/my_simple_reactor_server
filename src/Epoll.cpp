@@ -68,7 +68,6 @@ vector<Channel*> Epoll::loop(int timeout)
     }
         //超时
     if (nEvents==0){
-        printf("epoll_wait() timeout.\n");
         return channels;
     }
     //如果nEvents>0，表示有事件发生的fd的数量

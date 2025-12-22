@@ -20,7 +20,10 @@ void EventLoop::run()
 {
     vector<Channel*> channels;
     while (true){
-        channels = _ep->loop();
+        channels = _ep->loop(1000);
+        if(channels.empty()){
+            _epoll_time_out_cb(this);
+        }
         //如果nEvents>0，表示有事件发生的fd的数量
         for (const auto& ch:channels){
             ch->handle_event();
@@ -31,4 +34,9 @@ void EventLoop::run()
 Epoll *EventLoop::epObj() 
 {
     return _ep;
+}
+
+void EventLoop::set_epoll_timeout_callback(std::function<void(EventLoop *)> timeout_cb)
+{
+    _epoll_time_out_cb = timeout_cb;
 }
