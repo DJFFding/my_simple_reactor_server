@@ -84,13 +84,13 @@ void Connection::onMessage()
             continue;
         }
         else if (errno == EAGAIN||errno==EWOULDBLOCK){//全部数据已读取完毕
-            //printf("recv(eventfd=%d):%s\n",fd(),_input_buffer.data());
             while (true){
-                int len;
-                memcpy(&len,_input_buffer.data(),4);
-                if (_input_buffer.size()<len+4)break;
-                std::string message(_input_buffer.data()+4,len);
-                _input_buffer.erase(0,len+4);
+                int32_t len;
+                if (_input_buffer.size()<sizeof(len))break;
+                memcpy(&len,_input_buffer.data(),sizeof(len));
+                if (_input_buffer.size()<len+sizeof(len))break;
+                std::string message(_input_buffer.data()+sizeof(len),len);
+                _input_buffer.erase(0,len+sizeof(len));
                  //在这里，将经过若干步骤的运算
                 _on_message_cb(this,message);
             }
