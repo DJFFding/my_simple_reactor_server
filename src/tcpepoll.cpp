@@ -5,7 +5,7 @@
 #include "Epoll.h"
 #include "Channel.h"
 #include "EventLoop.h"
-#include "TcpServer.h"
+#include "EchoServer.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -30,7 +30,7 @@ int main(int argc,char* argv[])
     Log::SetLogWriterFunc([](const LogData& d) {
 		std::cout << Log::ToString(d) << std::endl;
 	});
-    TcpServer tcpServer(argv[1],atoi(argv[2]));
-    tcpServer.start();
+    EchoServer server(argv[1],atoi(argv[2]));
+    server.start();
     return 0;
 }
