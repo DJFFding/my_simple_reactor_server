@@ -8,6 +8,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <time.h>
+#include <string>
 
 int main(int argc, char * argv[])
 {
@@ -36,23 +37,48 @@ int main(int argc, char * argv[])
     }
     printf("connect ok.\n");
 
-    for (int i = 0; i < 200000; i++){
+    for (int i = 0; i < 100; i++){
         //从命令行输入内容
         memset(buf,0,sizeof(buf));
-        printf("please input:");
-        scanf("%s",buf);
-        if (send(sockfd,buf,strlen(buf)+1,0)<=0){
+        sprintf(buf,"这是第%d个超级女生。",i);
+
+        char temp_buf[1024]; //临时的buffer，报文头部+报文内容
+        bzero(temp_buf,sizeof(temp_buf));
+        int len =strlen(buf);
+        memcpy(temp_buf,&len,4);
+        memcpy(temp_buf+4,buf,len);
+
+        if (send(sockfd,temp_buf,len+4,0)<=0){
             printf("write() failed.\n");
             close(sockfd);
             return -1;
         }
-        bzero(buf,sizeof(buf));
-        if (recv(sockfd,buf,sizeof(buf),0)<=0){//接收服务端的回应
-            printf("read() failed.\n");
+    }
+     bzero(buf,sizeof(buf));
+     int nPos=0;
+     while (true){
+        int nLen = recv(sockfd,buf+nPos,sizeof(buf)-nPos,0);
+        if (nLen<0){
+            perror("recv() failed.");
             close(sockfd);
             return -1;
         }
-        printf("recv:%s\n",buf);
-    }
-    return 0;    
+        if (nLen==0){
+            break;
+        }
+        nPos+=nLen;
+       
+        while(true){
+            int len=0;
+            memcpy(&len,buf,4);
+            if (nPos<len+4){
+                break;
+            }
+            std::string message(buf+4,len);
+            printf("recv:%s\n",message.data());
+            nPos-=len+4;
+            memcpy(buf,buf+len+4,nPos);
+        }
+     }
+     return 0;    
 }

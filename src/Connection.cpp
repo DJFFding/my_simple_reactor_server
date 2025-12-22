@@ -51,6 +51,11 @@ void Connection::set_error_callback(std::function<void(Connection*)> error_cb)
     _error_cb = error_cb;
 }
 
+void Connection::set_on_message_callback(std::function<void(Connection *, std::string)> on_mcb)
+{
+    _on_message_cb = on_mcb;
+}
+
 void Connection::set_ip_port(const char *ip, uint16_t port)
 {
     _clientSock.set_ip_port(ip,port);
@@ -75,11 +80,16 @@ void Connection::onMessage()
             continue;
         }
         else if (errno == EAGAIN||errno==EWOULDBLOCK){//全部数据已读取完毕
-            printf("recv(eventfd=%d):%s\n",fd(),_input_buffer.data());
-            //在这里，将经过若干步骤的运算
-            _output_buffer = _input_buffer;
-            _input_buffer.clear();
-            send(fd(),_output_buffer.data(),_output_buffer.size(),0);
+            //printf("recv(eventfd=%d):%s\n",fd(),_input_buffer.data());
+            while (true){
+                int len;
+                memcpy(&len,_input_buffer.data(),4);
+                if (_input_buffer.size()<len+4)break;
+                std::string message(_input_buffer.data()+4,len);
+                _input_buffer.erase(0,len+4);
+                 //在这里，将经过若干步骤的运算
+                _on_message_cb(this,message);
+            }
             break;
         }
     }

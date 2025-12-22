@@ -30,6 +30,7 @@ void TcpServer::new_connection(int sockClient,const InetAddress& addr)
     conn->set_ip_port(addr.ip(),addr.port());
     conn->set_close_callback(std::bind(&TcpServer::close_connection,this,std::placeholders::_1));
     conn->set_error_callback(std::bind(&TcpServer::error_connection,this,std::placeholders::_1));
+    conn->set_on_message_callback(std::bind(&TcpServer::on_message,this,std::placeholders::_1,std::placeholders::_2));
     printf("new_connection accept client(fd=%d,ip=%s,port=%d) ok.\n",sockClient,conn->ip(),conn->port());
     _conns[sockClient]=conn;
 }
@@ -53,4 +54,15 @@ void TcpServer::error_connection(Connection *conn)
         delete iter->second;
         _conns.erase(iter);
     }
+}
+
+void TcpServer::on_message(Connection *conn, std::string message)
+{
+    printf("recv(eventfd=%d):%s\n",conn->fd(),message.data());
+    message = "reply:"+message;
+    int len = message.size();
+    std::string tempBuf;
+    tempBuf.append((char*)&len,4);
+    tempBuf.append(message,0,len);
+    send(conn->fd(),tempBuf.data(),tempBuf.size(),0);
 }
