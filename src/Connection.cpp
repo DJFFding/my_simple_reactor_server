@@ -5,11 +5,11 @@ Connection::Connection(Epoll* ep, int clientSock)
 {
     _clientChannel = new Channel(_ep,_clientSock.fd());
     _clientChannel->makeETMode();
-    _clientChannel->enableReading();
     _clientChannel->set_read_cb(std::bind(&Connection::onMessage,this));
     _clientChannel->set_close_cb(std::bind(&Connection::close_callback,this));
     _clientChannel->set_error_cb(std::bind(&Connection::error_callback,this));
     _clientChannel->set_write_cb(std::bind(&Connection::write_callback,this));
+    _clientChannel->enableReading();
 }
 
 Connection::~Connection()
