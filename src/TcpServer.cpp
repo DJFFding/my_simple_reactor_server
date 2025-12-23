@@ -3,31 +3,49 @@
 #include "Channel.h"
 #include "Connection.h"
 #include "Acceptor.h"
+#include "ThreadPool.h"
 
-TcpServer::TcpServer(const char *ip, uint16_t port)
-    :_acceptor(new Acceptor(&_loop,ip,port))
+TcpServer::TcpServer(const char *ip, uint16_t port,int thread_num)
+    :_main_loop(new EventLoop()),_acceptor(new Acceptor(_main_loop,ip,port)),_thread_num(thread_num)
 {
     _acceptor->set_new_connection_cb(std::bind(&TcpServer::new_connection,this,std::placeholders::_1,std::placeholders::_2));
-    _loop.set_epoll_timeout_callback(std::bind(&TcpServer::epoll_timeout,this,std::placeholders::_1));
+    _main_loop->set_epoll_timeout_callback(std::bind(&TcpServer::epoll_timeout,this,std::placeholders::_1));
+    _thread_pool = new ThreadPool(_thread_num);
+    //创建从事件循环
+    for (int i = 0; i < _thread_num; i++){
+        _sub_loops.push_back(new EventLoop());
+        _sub_loops[i]->set_epoll_timeout_callback(std::bind(&TcpServer::epoll_timeout,this,std::placeholders::_1));
+        _thread_pool->addTask([this,i](){
+            _sub_loops[i]->run();
+        });
+    }
+    
 }
 
 TcpServer::~TcpServer()
 {
     delete _acceptor;
+    delete _main_loop;
     for (auto& conn:_conns){
         delete conn.second;
     }
     _conns.clear();
+    delete _thread_pool;
+    for (auto & subloop:_sub_loops){
+        delete subloop;
+    }
+    _sub_loops.clear();
 }
 
 void TcpServer::start()
 {
-    _loop.run();
+    _main_loop->run();
 }
 
+//处理新客户端连接请求的成员函数
 void TcpServer::new_connection(int sockClient,const InetAddress& addr)
 {
-    Connection* conn = new Connection(_loop.epObj(),sockClient);
+    Connection* conn = new Connection(_sub_loops[sockClient%_thread_num]->epObj(),sockClient);
     conn->set_ip_port(addr.ip(),addr.port());
     conn->set_close_callback(std::bind(&TcpServer::close_connection,this,std::placeholders::_1));
     conn->set_error_callback(std::bind(&TcpServer::error_connection,this,std::placeholders::_1));

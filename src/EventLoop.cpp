@@ -1,5 +1,8 @@
 #include "EventLoop.h"
 #include "Channel.h"
+#include "Log.hpp"
+#include <unistd.h>
+#include <sys/syscall.h>
 using namespace std;
 
 
@@ -18,6 +21,7 @@ EventLoop::~EventLoop()
 
 void EventLoop::run()
 {
+    LOGI()<<"before eventloop run() thread is"<<syscall(SYS_gettid);
     vector<Channel*> channels;
     while (true){
         channels = _ep->loop(1000);

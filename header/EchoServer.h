@@ -5,7 +5,7 @@
 class EchoServer
 {
 public:
-    EchoServer(const char* ip,uint16_t port);
+    EchoServer(const char* ip,uint16_t port,int thread_num =3);
     ~EchoServer();
     void start();
     void handle_new_connection(Connection* conn);

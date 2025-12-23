@@ -3,14 +3,14 @@
 #include <unistd.h>
 using namespace std;
 
-ThreadPool::ThreadPool(size_t thread_num)
-    :_stop(false)
+ThreadPool::ThreadPool(int thread_num)
+    :_stop(false),_wait(0)
 {
     
     //启动thread_num哥线程，每个线程阻塞在条件变量上
-    for (size_t i = 0; i < thread_num; i++){
+    for (int i = 0; i < thread_num; i++){
         _threads.emplace_back([this](){
-            printf("create thread(%d).\n",syscall(SYS_gettid));
+            printf("create thread(%ld).\n",syscall(SYS_gettid));
             while (!_stop){
                 function<void()> task; //存放出队的元素
                 {
@@ -28,7 +28,7 @@ ThreadPool::ThreadPool(size_t thread_num)
                     task = move(_taskqueue.front());
                     _taskqueue.pop();                    
                 }   
-                printf("thread(%d) will call task later.\n",syscall(SYS_gettid));   
+                printf("thread(%ld) will call task later.\n",syscall(SYS_gettid));   
                 task(); //执行任务        
             }
         });
@@ -42,7 +42,7 @@ void ThreadPool::addTask(std::function<void()> task)
         lock_guard<mutex> lock(_mutex);
         _taskqueue.push(task);
     }
-    if (++_wait>0){
+    if (++_wait<=0){
         _conditional.notify_one(); //唤醒一个线程
     }
 }

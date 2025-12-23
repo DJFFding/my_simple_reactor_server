@@ -13,7 +13,7 @@ class ThreadPool
 {
 public:
     //在构造函数中将启动threadnum个线程
-    ThreadPool(size_t thread_num);
+    explicit ThreadPool(int thread_num);
     //把任务添加到队列中
     void addTask(std::function<void()> task);
     //在析构函数中将停止线程
@@ -25,7 +25,7 @@ private:
     std::mutex _mutex; //任务队列同步的互斥锁
     std::condition_variable _conditional; //任务队列同步的条件变量
     std::atomic_bool _stop; //在析构函数找那个，把_stop的值设为true，全部的线程将退出
-    std::atomic_int _wait = 0;
+    std::atomic_int _wait;
 };
 
 #endif
