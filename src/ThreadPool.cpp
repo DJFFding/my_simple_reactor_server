@@ -1,16 +1,17 @@
 #include "ThreadPool.h"
+#include "Log.hpp"
 #include <sys/syscall.h>
 #include <unistd.h>
 using namespace std;
 
-ThreadPool::ThreadPool(int thread_num)
-    :_stop(false),_wait(0)
+ThreadPool::ThreadPool(int thread_num,const std::string&thread_type)
+    :_stop(false),_wait(0),_thread_type(thread_type)
 {
     
     //启动thread_num哥线程，每个线程阻塞在条件变量上
     for (int i = 0; i < thread_num; i++){
         _threads.emplace_back([this](){
-            printf("create thread(%ld).\n",syscall(SYS_gettid));
+            LOGI()<<"create"<<_thread_type<<"thread ("<<syscall(SYS_gettid)<<")";
             while (!_stop){
                 function<void()> task; //存放出队的元素
                 {
@@ -28,7 +29,6 @@ ThreadPool::ThreadPool(int thread_num)
                     task = move(_taskqueue.front());
                     _taskqueue.pop();                    
                 }   
-                printf("thread(%ld) will call task later.\n",syscall(SYS_gettid));   
                 task(); //执行任务        
             }
         });

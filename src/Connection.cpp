@@ -101,7 +101,10 @@ void Connection::onMessage()
 
 void Connection::send(const char *data, size_t size)
 {
-    _output_buffer.append_with_head(data,size);
+    {
+        std::lock_guard<std::mutex> lock(_output_temp_mutex);
+        _output_temp_buffer.append_with_head(data,size);
+    }
     //注册写事件
     _clientChannel->enableWriting();
 }
@@ -109,6 +112,11 @@ void Connection::send(const char *data, size_t size)
 void Connection::write_callback()
 {
     while (true){
+        {
+            std::lock_guard<std::mutex> lock(_output_temp_mutex);
+            _output_buffer= _output_temp_buffer;
+            _output_temp_buffer.clear();
+        }
         int written = ::send(fd(),_output_buffer.data(),_output_buffer.size(),0);
         if (written>0){
             _output_buffer.erase(0,written);

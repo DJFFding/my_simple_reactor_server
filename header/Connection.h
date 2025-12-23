@@ -1,6 +1,7 @@
 #ifndef _Connection_h_
 #define _Connection_h_
 #include <functional>
+#include <mutex>
 #include "Socket.h"
 #include "InetAddress.h"
 #include "Channel.h"
@@ -35,5 +36,7 @@ private:
     std::function<void(Connection*)> _send_complete_cb;
     Buffer _input_buffer; //接收缓冲区
     Buffer _output_buffer; //发送缓冲区
+    Buffer _output_temp_buffer;
+    std::mutex _output_temp_mutex;
 };
 #endif

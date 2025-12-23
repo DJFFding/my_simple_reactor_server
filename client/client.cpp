@@ -20,7 +20,7 @@ int main(int argc, char * argv[])
     int sockfd;
     struct sockaddr_in servaddr;
     char buf[1024];
-    if ((sockfd = socket(AF_INET,SOCK_STREAM,0))<0) {
+    if ((sockfd = socket(AF_INET,SOCK_STREAM|SOCK_NONBLOCK,0))<0) {
         printf("socket() failed/\n");
         return -1;
     }
@@ -30,11 +30,18 @@ int main(int argc, char * argv[])
     servaddr.sin_addr.s_addr = inet_addr(argv[1]);
     printf("sockfd=%d\n",sockfd);
     if (connect(sockfd,(sockaddr*)&servaddr,sizeof(servaddr))!=0){
-        perror("connect");
-        printf("connect(%s:%s) failed.\n",argv[1],argv[2]);
-        close(sockfd);
-        return -1;
+        if (errno!=EINPROGRESS){
+            perror("connect");
+            printf("connect(%s:%s) failed.\n",argv[1],argv[2]);
+            close(sockfd);
+            return -1;
+        }
     }
+    fd_set write_fd;
+    int max_fd = sockfd;
+    FD_ZERO(&write_fd);
+    FD_SET(sockfd,&write_fd);
+    select(max_fd+1,nullptr,&write_fd,nullptr,nullptr);
     printf("connect ok.\n");
 
     for (int i = 0; i < 100; i++){
@@ -54,30 +61,39 @@ int main(int argc, char * argv[])
             return -1;
         }
     }
+     std::string buffer;
      bzero(buf,sizeof(buf));
-     int nPos=0;
      while (true){
-        int nLen = recv(sockfd,buf+nPos,sizeof(buf)-nPos,0);
-        if (nLen<0){
-            perror("recv() failed.");
-            close(sockfd);
-            return -1;
+        while (true){
+            int nLen = recv(sockfd,buf,sizeof(buf),0);
+            if (nLen<0){
+                if (errno==EINTR)continue;
+                else if (errno==EAGAIN||errno==EWOULDBLOCK){
+                    break;
+                }
+                perror("recv() failed.");
+                close(sockfd);
+                return -1;
+            }
+            else if (nLen==0){
+                break;
+            }
+            buffer.append(buf,nLen);
         }
-        if (nLen==0){
-            break;
-        }
-        nPos+=nLen;
        
         while(true){
             int len=0;
-            memcpy(&len,buf,4);
-            if (nPos<len+4){
+            if(buffer.size()<4){
                 break;
             }
-            std::string message(buf+4,len);
+            memcpy(&len,buffer.data(),4);
+            if (buffer.size()<len+4){
+                break;
+            }
+            buffer.erase(0,4);
+            std::string message(buffer,0,len);
             printf("recv:%s\n",message.data());
-            nPos-=len+4;
-            memcpy(buf,buf+len+4,nPos);
+            buffer.erase(0,len);
         }
      }
      return 0;    
