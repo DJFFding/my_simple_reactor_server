@@ -40,11 +40,8 @@ void EchoServer::handle_on_message(Connection *conn, std::string message)
 {
     printf("recv(eventfd=%d):%s\n",conn->fd(),message.data());
     message = "reply:"+message; //回显业务
-    int len = message.size();
-    std::string tempBuf;
-    tempBuf.append((char*)&len,4);
-    tempBuf.append(message,0,len);
-    conn->send(tempBuf.data(),tempBuf.size());
+    //拼接报文长度(头部)+报文内容
+    conn->send(message.data(),message.size());
 }
 
 void EchoServer::handle_send_complete(Connection *conn)

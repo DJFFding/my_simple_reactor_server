@@ -101,7 +101,7 @@ void Connection::onMessage()
 
 void Connection::send(const char *data, size_t size)
 {
-    _output_buffer.append(data,size);
+    _output_buffer.append_with_head(data,size);
     //注册写事件
     _clientChannel->enableWriting();
 }
