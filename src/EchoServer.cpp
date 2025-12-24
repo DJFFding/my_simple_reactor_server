@@ -5,7 +5,7 @@
 #include <unistd.h>
 
 EchoServer::EchoServer(const char *ip, uint16_t port,int io_thread_num,int work_thread_num)
-    :_tcpServer(ip,port,io_thread_num),_thread_pool(new ThreadPool(work_thread_num,"Work"))
+    :_tcpServer(ip,port,io_thread_num),_thread_pool(work_thread_num,"Work")
 {
     _tcpServer.set_new_conncetion_cb(std::bind(&EchoServer::handle_new_connection,this,std::placeholders::_1));
     _tcpServer.set_close_connection_cb(std::bind(&EchoServer::handle_close_connection,this,std::placeholders::_1));
@@ -17,7 +17,6 @@ EchoServer::EchoServer(const char *ip, uint16_t port,int io_thread_num,int work_
 
 EchoServer::~EchoServer()
 {
-    delete _thread_pool;
 }
 
 void EchoServer::start()
@@ -43,7 +42,7 @@ void EchoServer::handle_error_connection(ConnectionPtr conn)
 void EchoServer::handle_on_message(ConnectionPtr conn, std::string message)
 {
     //把业务添加到线程池的任务队列中
-    _thread_pool->addTask(std::bind(&EchoServer::on_message,this,conn,message));
+    _thread_pool.addTask(std::bind(&EchoServer::on_message,this,conn,message));
 }
 
 void EchoServer::handle_send_complete(ConnectionPtr conn)

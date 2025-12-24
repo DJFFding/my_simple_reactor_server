@@ -12,7 +12,7 @@ public:
     Epoll* epObj();
     void set_epoll_timeout_callback(std::function<void(EventLoop*)> timeout_cb);
 private:
-    Epoll* _ep;
+    Epoll _ep;
     std::function<void(EventLoop*)> _epoll_time_out_cb;
 };
 

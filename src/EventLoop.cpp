@@ -9,14 +9,13 @@ using namespace std;
 
 //在构造函数中创建Epoll对象
 EventLoop::EventLoop()
-    :_ep(new Epoll())
 {
 
 }
 
 EventLoop::~EventLoop()
 {
-    delete _ep;
+   
 }
 
 void EventLoop::run()
@@ -24,7 +23,7 @@ void EventLoop::run()
     LOGI()<<"before eventloop run() thread is"<<syscall(SYS_gettid);
     vector<Channel*> channels;
     while (true){
-        channels = _ep->loop(1000);
+        channels = _ep.loop(1000);
         if(channels.empty()){
             _epoll_time_out_cb(this);
         }
@@ -37,7 +36,7 @@ void EventLoop::run()
 
 Epoll *EventLoop::epObj() 
 {
-    return _ep;
+    return &_ep;
 }
 
 void EventLoop::set_epoll_timeout_callback(std::function<void(EventLoop *)> timeout_cb)

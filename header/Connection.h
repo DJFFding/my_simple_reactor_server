@@ -33,7 +33,7 @@ public:
 private:
     Epoll* _ep=nullptr;
     Socket _clientSock;
-    Channel* _clientChannel=nullptr;
+    std::unique_ptr<Channel> _clientChannel;
     std::function<void(ConnectionPtr)> _close_cb;
     std::function<void(ConnectionPtr)> _error_cb;
     std::function<void(ConnectionPtr,std::string)> _on_message_cb;

@@ -3,9 +3,11 @@
 #include "EventLoop.h"
 #include "Acceptor.h"
 #include "Connection.h"
+#include "ThreadPool.h"
 #include <map>
+#include <memory>
 
-class ThreadPool;
+
 //网络服务类 一个监听的fd和很多客户端连接的fd
 class TcpServer
 {
@@ -27,11 +29,11 @@ public:
     void set_send_completion_cb(std::function<void(ConnectionPtr)> fn);
     void set_epoll_timeout_cb(std::function<void(EventLoop*)> fn);
 private:
-    EventLoop* _main_loop; //一个TcpServer可能有多个事件循环，主事件循环
-    std::vector<EventLoop*> _sub_loops; //存放从事件循环
-    ThreadPool* _thread_pool;
+    std::unique_ptr<EventLoop> _main_loop; //一个TcpServer可能有多个事件循环，主事件循环
+    Acceptor _acceptor;//一个TcpServer只有一个Acceptor对象
     int _thread_num;
-    Acceptor* _acceptor;//一个TcpServer只有一个Acceptor对象
+    ThreadPool _thread_pool;
+    std::vector<std::unique_ptr<EventLoop>> _sub_loops; //存放从事件循环
     std::map<int,ConnectionPtr> _conns;
     std::function<void(ConnectionPtr)> _new_conncetion_cb;
     std::function<void(ConnectionPtr)> _close_connection_cb;

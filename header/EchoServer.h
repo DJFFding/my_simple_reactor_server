@@ -19,6 +19,6 @@ public:
     void on_message(ConnectionPtr conn,std::string message);
 private:
     TcpServer _tcpServer;
-    ThreadPool* _thread_pool;
+    ThreadPool _thread_pool;
 };
 #endif

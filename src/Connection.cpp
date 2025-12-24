@@ -4,7 +4,7 @@
 Connection::Connection(Epoll* ep, int clientSock)
     :_clientSock(clientSock),_ep(ep),_disconnect(false)
 {
-    _clientChannel = new Channel(_ep,_clientSock.fd());
+    _clientChannel = std::make_unique<Channel>(_ep,_clientSock.fd());
     _clientChannel->makeETMode();
     _clientChannel->set_read_cb(std::bind(&Connection::onMessage,this));
     _clientChannel->set_close_cb(std::bind(&Connection::close_callback,this));
@@ -15,7 +15,7 @@ Connection::Connection(Epoll* ep, int clientSock)
 
 Connection::~Connection()
 {
-    delete _clientChannel;
+    
 }
 
 int Connection::fd() 
