@@ -47,6 +47,18 @@ void Channel::disableWriting()
     _ep->update_channel(this);
 }
 
+void Channel::disableAll()
+{
+    _events=0;
+    _ep->update_channel(this);
+}
+
+void Channel::remove()
+{
+    _ep->remove_channel(this);
+    _inEpoll=false;
+}
+
 void Channel::makeAddEpoll()
 {
     _inEpoll=true;

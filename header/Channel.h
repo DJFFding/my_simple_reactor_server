@@ -15,6 +15,8 @@ public:
     void enableWriting();
     void disableReading();
     void disableWriting();
+    void disableAll(); //取消全部的事件
+    void remove(); //从事件循环中删除Channel
 
     void makeAddEpoll();
     void set_revents(uint32_t ev);

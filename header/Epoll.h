@@ -17,6 +17,7 @@ public:
     ~Epoll();
     void add_fd(int fd,uint32_t op);
     void update_channel(Channel* ch); //把channel添加/更新到红黑树上
+    void remove_channel(Channel* ch);
     void add_event(int fd,void* ptr,uint32_t op);
     std::vector<Channel*> loop(int timeout=-1);
 private:

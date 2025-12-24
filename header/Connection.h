@@ -7,8 +7,12 @@
 #include "Channel.h"
 #include "EventLoop.h"
 #include "Buffer.h"
+#include <memory>
+#include <atomic>
+class Connection;
+using ConnectionPtr = std::shared_ptr<Connection>;
 
-class Connection
+class Connection:public std::enable_shared_from_this<Connection>
 {
 public:
     Connection(Epoll* ep,int clientSock);
@@ -18,10 +22,10 @@ public:
     uint16_t port();
     void close_callback();  //tcp连接断开的回调函数
     void error_callback(); //tcp连接错误的回调函数
-    void set_close_callback(std::function<void(Connection*)> close_cb);
-    void set_error_callback(std::function<void(Connection*)> error_cb);
-    void set_send_complete_callback(std::function<void(Connection*)> send_ccb);
-    void set_on_message_callback(std::function<void(Connection*,std::string)> on_mcb);
+    void set_close_callback(std::function<void(ConnectionPtr)> close_cb);
+    void set_error_callback(std::function<void(ConnectionPtr)> error_cb);
+    void set_send_complete_callback(std::function<void(ConnectionPtr)> send_ccb);
+    void set_on_message_callback(std::function<void(ConnectionPtr,std::string)> on_mcb);
     void set_ip_port(const char*ip,uint16_t port);
     void onMessage();
     void send(const char* data,size_t size); //发送数据
@@ -30,13 +34,14 @@ private:
     Epoll* _ep=nullptr;
     Socket _clientSock;
     Channel* _clientChannel=nullptr;
-    std::function<void(Connection*)> _close_cb;
-    std::function<void(Connection*)> _error_cb;
-    std::function<void(Connection*,std::string)> _on_message_cb;
-    std::function<void(Connection*)> _send_complete_cb;
+    std::function<void(ConnectionPtr)> _close_cb;
+    std::function<void(ConnectionPtr)> _error_cb;
+    std::function<void(ConnectionPtr,std::string)> _on_message_cb;
+    std::function<void(ConnectionPtr)> _send_complete_cb;
     Buffer _input_buffer; //接收缓冲区
     Buffer _output_buffer; //发送缓冲区
     Buffer _output_temp_buffer;
     std::mutex _output_temp_mutex;
+    std::atomic_bool _disconnect;
 };
 #endif

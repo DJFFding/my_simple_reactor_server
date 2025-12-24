@@ -1,9 +1,9 @@
 #include "TcpServer.h"
 #include "Socket.h"
 #include "Channel.h"
-#include "Connection.h"
 #include "Acceptor.h"
 #include "ThreadPool.h"
+
 
 TcpServer::TcpServer(const char *ip, uint16_t port,int thread_num)
     :_main_loop(new EventLoop()),_acceptor(new Acceptor(_main_loop,ip,port)),_thread_num(thread_num)
@@ -26,9 +26,6 @@ TcpServer::~TcpServer()
 {
     delete _acceptor;
     delete _main_loop;
-    for (auto& conn:_conns){
-        delete conn.second;
-    }
     _conns.clear();
     delete _thread_pool;
     for (auto & subloop:_sub_loops){
@@ -45,7 +42,7 @@ void TcpServer::start()
 //处理新客户端连接请求的成员函数
 void TcpServer::new_connection(int sockClient,const InetAddress& addr)
 {
-    Connection* conn = new Connection(_sub_loops[sockClient%_thread_num]->epObj(),sockClient);
+    ConnectionPtr conn = std::make_shared<Connection>(_sub_loops[sockClient%_thread_num]->epObj(),sockClient);
     conn->set_ip_port(addr.ip(),addr.port());
     conn->set_close_callback(std::bind(&TcpServer::close_connection,this,std::placeholders::_1));
     conn->set_error_callback(std::bind(&TcpServer::error_connection,this,std::placeholders::_1));
@@ -53,35 +50,33 @@ void TcpServer::new_connection(int sockClient,const InetAddress& addr)
     conn->set_on_message_callback(std::bind(&TcpServer::on_message,this,std::placeholders::_1,std::placeholders::_2));
     _conns[sockClient]=conn;
     if (_new_conncetion_cb){
-         _new_conncetion_cb(conn);
+        _new_conncetion_cb(conn);
     }
 }
 
-void TcpServer::close_connection(Connection *conn)
+void TcpServer::close_connection(ConnectionPtr conn)
 {
     if (_close_connection_cb){
-      _close_connection_cb(conn);
+        _close_connection_cb(conn);
     }
     auto iter = _conns.find(conn->fd());
     if (iter!=_conns.end()){
-        delete iter->second;
         _conns.erase(iter);
     }
 }
 
-void TcpServer::error_connection(Connection *conn)
+void TcpServer::error_connection(ConnectionPtr conn)
 {
     if (_error_connection_cb){
         _error_connection_cb(conn);
     }
     auto iter = _conns.find(conn->fd());
     if (iter!=_conns.end()){
-        delete iter->second;
         _conns.erase(iter);
     }
 }
 
-void TcpServer::on_message(Connection *conn, std::string message)
+void TcpServer::on_message(ConnectionPtr conn, std::string message)
 {
     if (_on_message_cb){
         _on_message_cb(conn,message);
@@ -89,7 +84,7 @@ void TcpServer::on_message(Connection *conn, std::string message)
 }
 
 //数据发送完成后
-void TcpServer::send_complete(Connection *conn)
+void TcpServer::send_complete(ConnectionPtr conn)
 {
     if(_send_completion_cb){
         _send_completion_cb(conn);
@@ -97,39 +92,39 @@ void TcpServer::send_complete(Connection *conn)
 }
 
 //epoll_wait()超时
-void TcpServer::epoll_timeout(EventLoop *loop)
+void TcpServer::epoll_timeout(EventLoop*loop)
 {
     if (_epoll_timeout_cb) {
          _epoll_timeout_cb(loop);
     }
 }
 
-void TcpServer::set_new_conncetion_cb(std::function<void(Connection*)> fn)
+void TcpServer::set_new_conncetion_cb(std::function<void(ConnectionPtr)> fn)
 {
     _new_conncetion_cb = fn;
 }
 
-void TcpServer::set_close_connection_cb(std::function<void(Connection *)> fn)
+void TcpServer::set_close_connection_cb(std::function<void(ConnectionPtr)> fn)
 {
     _close_connection_cb = fn;
 }
 
-void TcpServer::set_error_connection_cb(std::function<void(Connection *)> fn)
+void TcpServer::set_error_connection_cb(std::function<void(ConnectionPtr)> fn)
 {
     _error_connection_cb = fn;
 }
 
-void TcpServer::set_on_message_cb(std::function<void(Connection *, std::string message)> fn)
+void TcpServer::set_on_message_cb(std::function<void(ConnectionPtr, std::string message)> fn)
 {
     _on_message_cb = fn;
 }
 
-void TcpServer::set_send_completion_cb(std::function<void(Connection *)> fn)
+void TcpServer::set_send_completion_cb(std::function<void(ConnectionPtr)> fn)
 {
     _send_completion_cb =fn;
 }
 
-void TcpServer::set_epoll_timeout_cb(std::function<void(EventLoop *)> fn)
+void TcpServer::set_epoll_timeout_cb(std::function<void(EventLoop*)> fn)
 {
     _epoll_timeout_cb=fn;
 }

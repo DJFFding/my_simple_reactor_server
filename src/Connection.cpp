@@ -1,7 +1,8 @@
 #include "Connection.h"
+#include "Log.hpp"
 
 Connection::Connection(Epoll* ep, int clientSock)
-    :_clientSock(clientSock),_ep(ep)
+    :_clientSock(clientSock),_ep(ep),_disconnect(false)
 {
     _clientChannel = new Channel(_ep,_clientSock.fd());
     _clientChannel->makeETMode();
@@ -34,30 +35,34 @@ uint16_t Connection::port()
 
 void Connection::close_callback()
 {
-    _close_cb(this);
+    _disconnect=true;
+    _clientChannel->remove();
+    _close_cb(shared_from_this());
 }
 
 void Connection::error_callback()
 {
-    _error_cb(this);
+    _disconnect=true;
+    _clientChannel->remove();
+    _error_cb(shared_from_this());
 }
 
-void Connection::set_close_callback(std::function<void(Connection*)> close_cb)
+void Connection::set_close_callback(std::function<void(ConnectionPtr)> close_cb)
 {
     _close_cb=close_cb;
 }
 
-void Connection::set_error_callback(std::function<void(Connection*)> error_cb)
+void Connection::set_error_callback(std::function<void(ConnectionPtr)> error_cb)
 {
     _error_cb = error_cb;
 }
 
-void Connection::set_send_complete_callback(std::function<void(Connection *)> send_ccb)
+void Connection::set_send_complete_callback(std::function<void(ConnectionPtr)> send_ccb)
 {
     _send_complete_cb = send_ccb;
 }
 
-void Connection::set_on_message_callback(std::function<void(Connection *, std::string)> on_mcb)
+void Connection::set_on_message_callback(std::function<void(ConnectionPtr, std::string)> on_mcb)
 {
     _on_message_cb = on_mcb;
 }
@@ -92,7 +97,7 @@ void Connection::onMessage()
                 std::string message(_input_buffer.data()+sizeof(len),len);
                 _input_buffer.erase(0,len+sizeof(len));
                  //在这里，将经过若干步骤的运算
-                _on_message_cb(this,message);
+                _on_message_cb(shared_from_this(),message);
             }
             break;
         }
@@ -101,6 +106,10 @@ void Connection::onMessage()
 
 void Connection::send(const char *data, size_t size)
 {
+    if (_disconnect){
+        LOGI()<<"客户端连接已断开,send直接返回.";
+        return;
+    }
     {
         std::lock_guard<std::mutex> lock(_output_temp_mutex);
         _output_temp_buffer.append_with_head(data,size);
@@ -122,7 +131,7 @@ void Connection::write_callback()
             _output_buffer.erase(0,written);
             if (_output_buffer.size()==0){
                 _clientChannel->disableWriting();
-                _send_complete_cb(this);
+                _send_complete_cb(shared_from_this());
                 break;
             }
         }else if(written==0){ //客户端连接已断开

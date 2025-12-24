@@ -46,6 +46,17 @@ void Epoll::update_channel(Channel *ch)
     }
 }
 
+void Epoll::remove_channel(Channel *ch)
+{
+    if(ch->is_in_epoll()){
+        if(epoll_ctl(_epollfd,EPOLL_CTL_DEL,ch->fd(),nullptr)==-1){
+            LOG_PERRORE()<<"epoll_ctl() failed";
+            exit(-1);   
+        }
+        LOGI()<<"remove_channel";
+    }
+}
+
 void Epoll::add_event(int fd,void *ptr, uint32_t op)
 {
     epoll_event ev;
@@ -66,7 +77,7 @@ vector<Channel*> Epoll::loop(int timeout)
         perror("epoll_wait() failed");
         exit(-1);
     }
-        //超时
+    //超时
     if (nEvents==0){
         return channels;
     }
