@@ -7,7 +7,7 @@
 
 TcpServer::TcpServer(const char *ip, uint16_t port,int thread_num)
     :_main_loop(std::make_unique<EventLoop>())
-    ,_acceptor(_main_loop,ip,port)
+    ,_acceptor(_main_loop.get(),ip,port)
     ,_thread_num(thread_num)
     ,_thread_pool(_thread_num,"IO")
 {
@@ -38,7 +38,7 @@ void TcpServer::start()
 //处理新客户端连接请求的成员函数
 void TcpServer::new_connection(int sockClient,const InetAddress& addr)
 {
-    ConnectionPtr conn = std::make_shared<Connection>(_sub_loops[sockClient%_thread_num]->epObj(),sockClient);
+    ConnectionPtr conn = std::make_shared<Connection>(_sub_loops[sockClient%_thread_num].get(),sockClient);
     conn->set_ip_port(addr.ip(),addr.port());
     conn->set_close_callback(std::bind(&TcpServer::close_connection,this,std::placeholders::_1));
     conn->set_error_callback(std::bind(&TcpServer::error_connection,this,std::placeholders::_1));

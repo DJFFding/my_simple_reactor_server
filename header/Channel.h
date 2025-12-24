@@ -2,12 +2,12 @@
 #define _Channel_h_
 #include "Epoll.h"
 #include <functional>
-
+class EventLoop;
 class Socket;
 class Channel
 {
 public:
-    Channel(Epoll* ep,int fd);
+    Channel(EventLoop* loop,int fd);
     ~Channel();
     int fd()const;
     void makeETMode(); //采用边缘触发
@@ -30,7 +30,7 @@ public:
     void set_write_cb(std::function<void()> write_cb);
 private:
     int _sockfd=-1; //Channel拥有的fd，Channel和fd是一对一的关系
-    Epoll* _ep=nullptr;
+    EventLoop* _loop = nullptr;
     bool _inEpoll=false; //Channel是否以添加到epoll树上
     uint32_t _events=0; //_sockfd需要监听的事件
     uint32_t _revents=0; //——sockfd已发生的事件

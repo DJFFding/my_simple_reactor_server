@@ -15,7 +15,7 @@ using ConnectionPtr = std::shared_ptr<Connection>;
 class Connection:public std::enable_shared_from_this<Connection>
 {
 public:
-    Connection(Epoll* ep,int clientSock);
+    Connection(EventLoop* loop,int clientSock);
     ~Connection();
     int fd();
     const char* ip();
@@ -29,9 +29,10 @@ public:
     void set_ip_port(const char*ip,uint16_t port);
     void onMessage();
     void send(const char* data,size_t size); //发送数据
+    void send_in_loop(const char* data,size_t size);//如果是io线程直接调用，如果不是，把这个函数传给io线程执行
     void write_callback();
 private:
-    Epoll* _ep=nullptr;
+    EventLoop* _loop=nullptr;
     Socket _clientSock;
     std::unique_ptr<Channel> _clientChannel;
     std::function<void(ConnectionPtr)> _close_cb;
@@ -40,8 +41,6 @@ private:
     std::function<void(ConnectionPtr)> _send_complete_cb;
     Buffer _input_buffer; //接收缓冲区
     Buffer _output_buffer; //发送缓冲区
-    Buffer _output_temp_buffer;
-    std::mutex _output_temp_mutex;
     std::atomic_bool _disconnect;
 };
 #endif

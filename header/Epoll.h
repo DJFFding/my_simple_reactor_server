@@ -8,6 +8,9 @@
 #include <sys/epoll.h>
 #include <vector>
 #include <unistd.h>
+#include <queue>
+#include <sys/eventfd.h>
+
 
 class Channel;
 class Epoll

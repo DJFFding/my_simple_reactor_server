@@ -3,8 +3,8 @@
 #include "Socket.h"
 #include "Connection.h"
 
-Channel::Channel(Epoll *ep, int fd)
-    :_ep(ep),_sockfd(fd)
+Channel::Channel(EventLoop* loop, int fd)
+    :_loop(loop),_sockfd(fd)
 {
 }
 
@@ -26,36 +26,36 @@ void Channel::makeETMode()
 void Channel::enableReading()
 {
     _events|=EPOLLIN;
-    _ep->update_channel(this);
+    _loop->update_channel(this);
 }
 
 void Channel::enableWriting()
 {
     _events|=EPOLLOUT;
-    _ep->update_channel(this);
+    _loop->update_channel(this);
 }
 
 void Channel::disableReading()
 {
      _events&=~EPOLLIN;
-    _ep->update_channel(this);
+    _loop->update_channel(this);
 }
 
 void Channel::disableWriting()
 {
      _events&=~EPOLLOUT;
-    _ep->update_channel(this);
+    _loop->update_channel(this);
 }
 
 void Channel::disableAll()
 {
     _events=0;
-    _ep->update_channel(this);
+    _loop->update_channel(this);
 }
 
 void Channel::remove()
 {
-    _ep->remove_channel(this);
+    _loop->remove_channel(this);
     _inEpoll=false;
 }
 

@@ -1,6 +1,8 @@
 #include "Epoll.h"
 #include "Log.hpp"
 #include "Channel.h"
+#include <sys/syscall.h>
+#include <unistd.h>
 using namespace std;
 
 Epoll::Epoll()
@@ -89,5 +91,3 @@ vector<Channel*> Epoll::loop(int timeout)
     }
     return channels;
 }
-
-

@@ -18,6 +18,8 @@ public:
     void addTask(std::function<void()> task);
     //在析构函数中将停止线程
     ~ThreadPool();
+    //获取线程池的大小
+    size_t size() const;
 
 private:
     std::vector<std::thread> _threads; //线程池中的线程

@@ -1,10 +1,10 @@
 #include "Acceptor.h"
 #include "Connection.h"
 
-Acceptor::Acceptor(const std::unique_ptr<EventLoop>& loop, const char *ip, uint16_t port)
+Acceptor::Acceptor(EventLoop* loop, const char *ip, uint16_t port)
     :_loop(loop)
     ,_serverSock(Socket::create_nonblocking())
-    ,_acceptChannel(_loop->epObj(),_serverSock.fd())
+    ,_acceptChannel(_loop,_serverSock.fd())
 {
     _serverSock.set_reuse_addr(true);
     _serverSock.set_tcp_nodelay(true);

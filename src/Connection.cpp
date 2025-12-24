@@ -1,10 +1,10 @@
 #include "Connection.h"
 #include "Log.hpp"
 
-Connection::Connection(Epoll* ep, int clientSock)
-    :_clientSock(clientSock),_ep(ep),_disconnect(false)
+Connection::Connection(EventLoop* loop, int clientSock)
+    :_clientSock(clientSock),_loop(loop),_disconnect(false)
 {
-    _clientChannel = std::make_unique<Channel>(_ep,_clientSock.fd());
+    _clientChannel = std::make_unique<Channel>(_loop,_clientSock.fd());
     _clientChannel->makeETMode();
     _clientChannel->set_read_cb(std::bind(&Connection::onMessage,this));
     _clientChannel->set_close_cb(std::bind(&Connection::close_callback,this));
@@ -110,10 +110,18 @@ void Connection::send(const char *data, size_t size)
         LOGI()<<"客户端连接已断开,send直接返回.";
         return;
     }
-    {
-        std::lock_guard<std::mutex> lock(_output_temp_mutex);
-        _output_temp_buffer.append_with_head(data,size);
+    if(_loop->is_in_loop_thread()) {//判断当前线程是否为IO线程
+        //如果当前线程是IO线程，直接执行发送数据的操作
+        send_in_loop(data,size);
+    }else{
+        //如果当前线程不是IO线程，把发送数据的操作交给IO线程去执行
+        _loop->queue_in_loop(std::bind(&Connection::send_in_loop,this,data,size));
     }
+}
+
+void Connection::send_in_loop(const char *data, size_t size)
+{
+    _output_buffer.append_with_head(data,size);
     //注册写事件
     _clientChannel->enableWriting();
 }
@@ -121,11 +129,6 @@ void Connection::send(const char *data, size_t size)
 void Connection::write_callback()
 {
     while (true){
-        {
-            std::lock_guard<std::mutex> lock(_output_temp_mutex);
-            _output_buffer= _output_temp_buffer;
-            _output_temp_buffer.clear();
-        }
         int written = ::send(fd(),_output_buffer.data(),_output_buffer.size(),0);
         if (written>0){
             _output_buffer.erase(0,written);

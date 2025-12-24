@@ -41,8 +41,12 @@ void EchoServer::handle_error_connection(ConnectionPtr conn)
 
 void EchoServer::handle_on_message(ConnectionPtr conn, std::string message)
 {
-    //把业务添加到线程池的任务队列中
-    _thread_pool.addTask(std::bind(&EchoServer::on_message,this,conn,message));
+    if(_thread_pool.size()==0){
+        on_message(conn,message);
+    }else{
+        //把业务添加到线程池的任务队列中
+        _thread_pool.addTask(std::bind(&EchoServer::on_message,this,conn,message));
+    }
 }
 
 void EchoServer::handle_send_complete(ConnectionPtr conn)

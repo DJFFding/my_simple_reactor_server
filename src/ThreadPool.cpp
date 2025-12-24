@@ -7,7 +7,6 @@ using namespace std;
 ThreadPool::ThreadPool(int thread_num,const std::string&thread_type)
     :_stop(false),_wait(0),_thread_type(thread_type)
 {
-    
     //启动thread_num哥线程，每个线程阻塞在条件变量上
     for (int i = 0; i < thread_num; i++){
         _threads.emplace_back([this](){
@@ -53,4 +52,9 @@ ThreadPool::~ThreadPool()
     _conditional.notify_all();
     for (auto& th:_threads)
         th.join();
+}
+
+size_t ThreadPool::size() const
+{
+    return _threads.size();
 }
