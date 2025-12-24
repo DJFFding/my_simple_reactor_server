@@ -96,6 +96,7 @@ void Connection::onMessage()
                 if (_input_buffer.size()<len+sizeof(len))break;
                 std::string message(_input_buffer.data()+sizeof(len),len);
                 _input_buffer.erase(0,len+sizeof(len));
+                _heart_time = Timestamp::now();
                  //在这里，将经过若干步骤的运算
                 _on_message_cb(shared_from_this(),message);
             }

@@ -3,17 +3,23 @@
 #include "Log.hpp"
 #include <unistd.h>
 #include <sys/syscall.h>
+#include <sys/timerfd.h>
 using namespace std;
 
 
 
 //在构造函数中创建Epoll对象
-EventLoop::EventLoop()
+EventLoop::EventLoop(bool mainloop)
     :_wakeup_fd(eventfd(0,EFD_NONBLOCK))
-    ,_wakeup_channel(new Channel(this,_wakeup_fd))
+    ,_wakeup_channel(make_unique<Channel>(this,_wakeup_fd))
+    ,_timer_fd(create_timer_fd())
+    ,_timer_channel(make_unique<Channel>(this,_timer_fd))
+    ,_mainloop(mainloop)
 {
     _wakeup_channel->set_read_cb(std::bind(&EventLoop::handle_wake_up,this));
     _wakeup_channel->enableReading();
+    _timer_channel->set_read_cb(std::bind(&EventLoop::alarm_handler,this));
+    _timer_channel->enableReading();
 }
 
 EventLoop::~EventLoop()
@@ -93,4 +99,29 @@ void EventLoop::update_channel(Channel *ch)
 void EventLoop::remove_channel(Channel *ch)
 {
     _ep.remove_channel(ch);
+}
+
+void EventLoop::alarm_handler()
+{
+    if(_mainloop)
+        LOGI()<<"主事件循环alarm_handler";
+    else
+        LOGI()<<"从事件循环alarm_handler";
+    //重新计时
+    struct itimerspec timeout;
+    bzero(&timeout,sizeof(timeout));
+    timeout.it_value.tv_sec = 5;
+    timeout.it_value.tv_nsec = 0;
+    timerfd_settime(_timer_fd,0,&timeout,nullptr);
+}
+
+int EventLoop::create_timer_fd(int sec)
+{
+    int tfd = timerfd_create(CLOCK_MONOTONIC,TFD_NONBLOCK | TFD_CLOEXEC);
+    struct itimerspec timeout;
+    bzero(&timeout,sizeof(timeout));
+    timeout.it_value.tv_sec = 5;
+    timeout.it_value.tv_nsec = 0;
+    timerfd_settime(tfd,0,&timeout,nullptr);
+    return tfd;
 }

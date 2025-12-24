@@ -6,7 +6,7 @@
 
 
 TcpServer::TcpServer(const char *ip, uint16_t port,int thread_num)
-    :_main_loop(std::make_unique<EventLoop>())
+    :_main_loop(std::make_unique<EventLoop>(true))
     ,_acceptor(_main_loop.get(),ip,port)
     ,_thread_num(thread_num)
     ,_thread_pool(_thread_num,"IO")
@@ -15,7 +15,7 @@ TcpServer::TcpServer(const char *ip, uint16_t port,int thread_num)
     _main_loop->set_epoll_timeout_callback(std::bind(&TcpServer::epoll_timeout,this,std::placeholders::_1));
     //创建从事件循环
     for (int i = 0; i < _thread_num; i++){
-        _sub_loops.emplace_back(new EventLoop());
+        _sub_loops.emplace_back(new EventLoop(false));
         _sub_loops[i]->set_epoll_timeout_callback(std::bind(&TcpServer::epoll_timeout,this,std::placeholders::_1));
         _thread_pool.addTask([this,i](){
             _sub_loops[i]->run();

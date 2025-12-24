@@ -7,6 +7,7 @@
 #include "Channel.h"
 #include "EventLoop.h"
 #include "Buffer.h"
+#include "Timestamp.h"
 #include <memory>
 #include <atomic>
 class Connection;
@@ -39,6 +40,7 @@ private:
     std::function<void(ConnectionPtr)> _error_cb;
     std::function<void(ConnectionPtr,std::string)> _on_message_cb;
     std::function<void(ConnectionPtr)> _send_complete_cb;
+    Timestamp _heart_time;
     Buffer _input_buffer; //接收缓冲区
     Buffer _output_buffer; //发送缓冲区
     std::atomic_bool _disconnect;

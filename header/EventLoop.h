@@ -8,7 +8,7 @@
 class EventLoop
 {
 public:
-    EventLoop();  
+    EventLoop(bool mainloop);  
     ~EventLoop();
     void run(); //运行事件循环
     void set_epoll_timeout_callback(std::function<void(EventLoop*)> timeout_cb);
@@ -18,6 +18,8 @@ public:
     void handle_wake_up();
     void update_channel(Channel *ch);
     void remove_channel(Channel *ch);
+    void alarm_handler();
+    static int create_timer_fd(int sec=30);
 private:
     Epoll _ep;
     std::function<void(EventLoop*)> _epoll_time_out_cb;
@@ -27,6 +29,9 @@ private:
     bool _init_tid=false;
     int _wakeup_fd=-1;
     std::unique_ptr<Channel> _wakeup_channel;
+    int _timer_fd =-1;
+    std::unique_ptr<Channel> _timer_channel;
+    bool _mainloop;
 };
 
 #endif
