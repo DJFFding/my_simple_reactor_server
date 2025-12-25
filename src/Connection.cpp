@@ -14,6 +14,8 @@ Connection::Connection(EventLoop* loop, int clientSock)
 
 Connection::~Connection()
 {
+    static int i =0;
+    LOGI()<<"析构执行了"<<++i<<"次";
 }
 
 int Connection::fd() 
@@ -88,13 +90,9 @@ void Connection::onMessage()
             continue;
         }
         else if (errno == EAGAIN||errno==EWOULDBLOCK){//全部数据已读取完毕
+            std::string message;
             while (true){
-                int32_t len;
-                if (_input_buffer.size()<sizeof(len))break;
-                memcpy(&len,_input_buffer.data(),sizeof(len));
-                if (_input_buffer.size()<len+sizeof(len))break;
-                std::string message(_input_buffer.data()+sizeof(len),len);
-                _input_buffer.erase(0,len+sizeof(len));
+                if (!_input_buffer.pick_message(message))break;
                  //在这里，将经过若干步骤的运算
                 _on_message_cb(shared_from_this(),message);
             }
