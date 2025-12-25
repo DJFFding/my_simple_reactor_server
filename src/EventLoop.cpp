@@ -26,7 +26,6 @@ EventLoop::EventLoop(bool mainloop,int alarm_val,int timeout)
 
 EventLoop::~EventLoop()
 {
-   
 }
 
 void EventLoop::run()
@@ -35,18 +34,27 @@ void EventLoop::run()
         _thread_id = syscall(SYS_gettid);
         _init_tid=true;
     }
-    LOGI()<<"before eventloop run() thread is"<<syscall(SYS_gettid);
     vector<Channel*> channels;
-    while (true){
+    while (!_stop){
         channels = _ep.loop(1000);
+        if(_stop)break;
         if(channels.empty()){
             _epoll_time_out_cb(this);
+            continue;
         }
+        if(channels[0]==(Channel*)-1)
+            continue;
         //如果nEvents>0，表示有事件发生的fd的数量
         for (const auto& ch:channels){
             ch->handle_event();
         }
     }
+}
+
+void EventLoop::stop()
+{
+    _stop = true;
+    wake_up();
 }
 
 void EventLoop::set_epoll_timeout_callback(std::function<void(EventLoop *)> timeout_cb)

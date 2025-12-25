@@ -18,7 +18,17 @@
 #include <time.h>
 #include <fcntl.h>
 #include <sys/epoll.h>
+#include <signal.h>
 using namespace std;
+
+EchoServer * echoServer=nullptr;
+
+void Stop(int sig) // 信号2和15的处理函数，功能是停止服务程序
+{
+    LOGI()<<"sig="<<sig;
+    LOGI()<<"EchoServer已停止.";
+    delete echoServer;
+}
 
 int main(int argc,char* argv[])
 {
@@ -30,7 +40,10 @@ int main(int argc,char* argv[])
     Log::SetLogWriterFunc([](const LogData& d) {
 		std::cout << Log::ToString(d) << std::endl;
 	});
-    EchoServer server(argv[1],atoi(argv[2]));
-    server.start();
+    signal(SIGINT,Stop); //信号2,Ctrl+C发出的信号
+    signal(SIGTERM,Stop); //信号15，系统kill或killall命令默认发送对的信号
+
+    echoServer = new EchoServer(argv[1],atoi(argv[2]));
+    echoServer->start();
     return 0;
 }

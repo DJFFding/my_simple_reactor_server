@@ -14,8 +14,6 @@ Connection::Connection(EventLoop* loop, int clientSock)
 
 Connection::~Connection()
 {
-    static int i=0;
-    LOGI()<<"Connection析构:"<<++i;
 }
 
 int Connection::fd() 

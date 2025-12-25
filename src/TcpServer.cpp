@@ -2,7 +2,7 @@
 #include "Socket.h"
 #include "Channel.h"
 #include "Acceptor.h"
-
+#include "Log.hpp"
 
 
 TcpServer::TcpServer(const char *ip, uint16_t port,int thread_num)
@@ -34,6 +34,21 @@ TcpServer::~TcpServer()
 void TcpServer::start()
 {
     _main_loop->run();
+}
+
+void TcpServer::stop()
+{
+    //停止主事件循环
+    _main_loop->stop();
+    LOGI()<<"主事件循环已停止";
+    //停止从事件循环
+    for (int i = 0; i < _thread_num; i++){
+        _sub_loops[i]->stop();
+    }
+    LOGI()<<"从事件循环已停止";
+    //停止IO线程
+    _thread_pool.stop();
+    LOGI()<<"IO线程已停止";
 }
 
 //处理新客户端连接请求的成员函数

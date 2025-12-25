@@ -16,6 +16,7 @@ public:
     TcpServer(const char* ip,uint16_t port,int thread_num=3);
     ~TcpServer();
     void start();
+    void stop(); //停止IO线程和事件循环
     void new_connection(int sockClient,const InetAddress& addr);
     void close_connection(ConnectionPtr conn);
     void error_connection(ConnectionPtr conn);

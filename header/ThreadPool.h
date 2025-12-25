@@ -20,6 +20,8 @@ public:
     ~ThreadPool();
     //获取线程池的大小
     size_t size() const;
+    //停止线程
+    void stop();
 
 private:
     std::vector<std::thread> _threads; //线程池中的线程

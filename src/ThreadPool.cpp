@@ -28,7 +28,9 @@ ThreadPool::ThreadPool(int thread_num,const std::string&thread_type)
                     task = move(_taskqueue.front());
                     _taskqueue.pop();                    
                 }   
-                task(); //执行任务        
+                task(); //执行任务      
+                static int i =0;
+                LOGI()<<_thread_type<<"thread"<<"执行完成"<<++i<<"次任务";  
             }
         });
     }
@@ -48,13 +50,19 @@ void ThreadPool::addTask(std::function<void()> task)
 
 ThreadPool::~ThreadPool()
 {
-    _stop = true;
-    _conditional.notify_all();
-    for (auto& th:_threads)
-        th.join();
+   stop();
 }
 
 size_t ThreadPool::size() const
 {
     return _threads.size();
+}
+
+void ThreadPool::stop()
+{
+    if(_stop)return;
+    _stop = true;
+    _conditional.notify_all();
+    for (auto& th:_threads)
+        th.join();
 }

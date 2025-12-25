@@ -9,6 +9,7 @@ public:
     EchoServer(const char* ip,uint16_t port,int io_thread_num =3,int work_thread_num = 3);
     ~EchoServer();
     void start();
+    void stop();
     void handle_new_connection(ConnectionPtr conn);
     void handle_close_connection(ConnectionPtr conn);
     void handle_error_connection(ConnectionPtr conn);

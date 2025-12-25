@@ -77,6 +77,10 @@ vector<Channel*> Epoll::loop(int timeout)
     bzero(_events,sizeof(_events));
     int nEvents = epoll_wait(_epollfd,_events,nMaxEvents,timeout);
     if (nEvents<0) {
+        if (errno==EINTR){
+            channels.push_back((Channel*)-1);
+            return channels;            
+        }
         perror("epoll_wait() failed");
         exit(-1);
     }

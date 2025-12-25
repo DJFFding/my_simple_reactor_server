@@ -15,6 +15,7 @@ public:
     EventLoop(bool mainloop,int alarm_val=30,int timeout=80);  
     ~EventLoop();
     void run(); //运行事件循环
+    void stop(); //停止事件循环
     void set_epoll_timeout_callback(std::function<void(EventLoop*)> timeout_cb);
     bool is_in_loop_thread() const;
     void queue_in_loop(std::function<void()> fn);
@@ -43,6 +44,7 @@ private:
     std::map<int,ConnectionPtr> _conns;
     std::mutex _mutex_conns;
     std::function<void(int)> _remove_conn_cb;
+    bool _stop=false;
 
 };
 

@@ -17,11 +17,22 @@ EchoServer::EchoServer(const char *ip, uint16_t port,int io_thread_num,int work_
 
 EchoServer::~EchoServer()
 {
+    stop();
 }
 
 void EchoServer::start()
 {
     _tcpServer.start();
+}
+
+void EchoServer::stop()
+{
+    //停止工作线程
+    _thread_pool.stop();
+    LOGI()<<"工作线程已停止";
+    //停止IO线程
+    _tcpServer.stop();
+    LOGI()<<"IO线程已停止";
 }
 
 void EchoServer::handle_new_connection(ConnectionPtr conn)
