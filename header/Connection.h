@@ -29,9 +29,11 @@ public:
     void set_on_message_callback(std::function<void(ConnectionPtr,std::string)> on_mcb);
     void set_ip_port(const char*ip,uint16_t port);
     void onMessage();
-    void send(const char* data,size_t size); //发送数据
-    void send_in_loop(const char* data,size_t size);//如果是io线程直接调用，如果不是，把这个函数传给io线程执行
+    void send(std::string data); //发送数据
+    void send_in_loop(std::string data);//如果是io线程直接调用，如果不是，把这个函数传给io线程执行
     void write_callback();
+    bool timeout(time_t now,int val);
+    void enableReading();
 private:
     EventLoop* _loop=nullptr;
     Socket _clientSock;

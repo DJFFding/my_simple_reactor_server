@@ -7,7 +7,7 @@ class Socket;
 class Channel
 {
 public:
-    Channel(EventLoop* loop,int fd);
+    Channel(EventLoop* loop,int fd,bool time_out_event=false);
     ~Channel();
     int fd()const;
     void makeETMode(); //采用边缘触发
@@ -28,6 +28,8 @@ public:
     void set_close_cb(std::function<void()> close_cb);
     void set_error_cb(std::function<void()> error_cb);
     void set_write_cb(std::function<void()> write_cb);
+
+    bool isTimeout()const;
 private:
     int _sockfd=-1; //Channel拥有的fd，Channel和fd是一对一的关系
     EventLoop* _loop = nullptr;
@@ -38,5 +40,6 @@ private:
     std::function<void()> _writeCallback;
     std::function<void()> _closeCallback;
     std::function<void()> _errorCallback;
+    bool _is_time_out_event;
 };
 #endif

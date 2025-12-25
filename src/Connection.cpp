@@ -10,12 +10,12 @@ Connection::Connection(EventLoop* loop, int clientSock)
     _clientChannel->set_close_cb(std::bind(&Connection::close_callback,this));
     _clientChannel->set_error_cb(std::bind(&Connection::error_callback,this));
     _clientChannel->set_write_cb(std::bind(&Connection::write_callback,this));
-    _clientChannel->enableReading();
 }
 
 Connection::~Connection()
 {
-    
+    static int i=0;
+    LOGI()<<"Connection析构:"<<++i;
 }
 
 int Connection::fd() 
@@ -62,7 +62,7 @@ void Connection::set_send_complete_callback(std::function<void(ConnectionPtr)> s
     _send_complete_cb = send_ccb;
 }
 
-void Connection::set_on_message_callback(std::function<void(ConnectionPtr, std::string)> on_mcb)
+void Connection::set_on_message_callback(std::function<void(ConnectionPtr,std::string)> on_mcb)
 {
     _on_message_cb = on_mcb;
 }
@@ -75,6 +75,7 @@ void Connection::set_ip_port(const char *ip, uint16_t port)
 void Connection::onMessage()
 {
     char buffer[1024];
+    _heart_time = Timestamp::now();
     while (true){ //由于使用非阻塞IO，一次读取buffer大小数据，直到全部数据读取完毕
         bzero(&buffer,sizeof(buffer));
         ssize_t nread = read(fd(),buffer,sizeof(buffer));
@@ -96,7 +97,6 @@ void Connection::onMessage()
                 if (_input_buffer.size()<len+sizeof(len))break;
                 std::string message(_input_buffer.data()+sizeof(len),len);
                 _input_buffer.erase(0,len+sizeof(len));
-                _heart_time = Timestamp::now();
                  //在这里，将经过若干步骤的运算
                 _on_message_cb(shared_from_this(),message);
             }
@@ -105,7 +105,7 @@ void Connection::onMessage()
     }
 }
 
-void Connection::send(const char *data, size_t size)
+void Connection::send(std::string data)
 {
     if (_disconnect){
         LOGI()<<"客户端连接已断开,send直接返回.";
@@ -113,16 +113,16 @@ void Connection::send(const char *data, size_t size)
     }
     if(_loop->is_in_loop_thread()) {//判断当前线程是否为IO线程
         //如果当前线程是IO线程，直接执行发送数据的操作
-        send_in_loop(data,size);
+        send_in_loop(data);
     }else{
         //如果当前线程不是IO线程，把发送数据的操作交给IO线程去执行
-        _loop->queue_in_loop(std::bind(&Connection::send_in_loop,this,data,size));
+        _loop->queue_in_loop(std::bind(&Connection::send_in_loop,this,data));
     }
 }
 
-void Connection::send_in_loop(const char *data, size_t size)
+void Connection::send_in_loop(std::string data)
 {
-    _output_buffer.append_with_head(data,size);
+    _output_buffer.append_with_head(data.c_str(),data.size());
     //注册写事件
     _clientChannel->enableWriting();
 }
@@ -149,4 +149,14 @@ void Connection::write_callback()
             break;
         }
     }
+}
+
+bool Connection::timeout(time_t now,int val)
+{
+    return (now - _heart_time.toInt()) > val;
+}
+
+void Connection::enableReading()
+{
+    _clientChannel->enableReading();
 }

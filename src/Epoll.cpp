@@ -73,6 +73,7 @@ void Epoll::add_event(int fd,void *ptr, uint32_t op)
 vector<Channel*> Epoll::loop(int timeout)
 {
     vector<Channel*> channels;
+    vector<Channel*> timeout_channels;
     bzero(_events,sizeof(_events));
     int nEvents = epoll_wait(_epollfd,_events,nMaxEvents,timeout);
     if (nEvents<0) {
@@ -87,7 +88,14 @@ vector<Channel*> Epoll::loop(int timeout)
     for (int i = 0; i < nEvents; i++){
         Channel* ch =(Channel*)_events[i].data.ptr;
         ch->set_revents(_events[i].events);
-        channels.push_back(ch);
+        if (ch->isTimeout()){
+            timeout_channels.push_back(ch);
+        }else{
+            channels.push_back(ch);
+        }
+    }
+    for (auto time_ch:timeout_channels){
+        channels.push_back(time_ch);
     }
     return channels;
 }

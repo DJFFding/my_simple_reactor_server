@@ -26,12 +26,12 @@ void EchoServer::start()
 
 void EchoServer::handle_new_connection(ConnectionPtr conn)
 {
-    LOGI()<<"new connection. client fd:"<<conn->fd()<<",addr:("<<conn->ip()<<":"<<conn->port()<<") connect";
+    //LOGI()<<"new connection. client fd:"<<conn->fd()<<",addr:("<<conn->ip()<<":"<<conn->port()<<") connect";
 }
 
 void EchoServer::handle_close_connection(ConnectionPtr conn)
 {
-    LOGI()<<"close connection. client fd:"<<conn->fd()<<",addr:("<<conn->ip()<<":"<<conn->port()<<") close";
+    //LOGI()<<"close connection. client fd:"<<conn->fd()<<",addr:("<<conn->ip()<<":"<<conn->port()<<") close";
 }
 
 void EchoServer::handle_error_connection(ConnectionPtr conn)
@@ -51,7 +51,7 @@ void EchoServer::handle_on_message(ConnectionPtr conn, std::string message)
 
 void EchoServer::handle_send_complete(ConnectionPtr conn)
 {
-    LOGI()<<"send Completed.";
+    //LOGI()<<"send Completed.";
 }
 
 void EchoServer::handle_epoll_timeout(EventLoop* loop)
@@ -63,8 +63,8 @@ void EchoServer::handle_epoll_timeout(EventLoop* loop)
 uint32_t times=0;
 void EchoServer::on_message(ConnectionPtr conn, std::string message)
 {
-    LOGI()<<"thread_id:"<<syscall(SYS_gettid)<<"work time:"<<++times;
+    //LOGI()<<"thread_id:"<<syscall(SYS_gettid)<<"work time:"<<++times;
     message = "reply:"+message; //回显业务
     //拼接报文长度(头部)+报文内容
-    conn->send(message.data(),message.size());
+    conn->send(message);
 }

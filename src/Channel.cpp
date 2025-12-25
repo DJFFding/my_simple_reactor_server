@@ -2,9 +2,10 @@
 #include "InetAddress.h"
 #include "Socket.h"
 #include "Connection.h"
+#include "Log.hpp"
 
-Channel::Channel(EventLoop* loop, int fd)
-    :_loop(loop),_sockfd(fd)
+Channel::Channel(EventLoop* loop, int fd,bool time_out_event)
+    :_loop(loop),_sockfd(fd),_is_time_out_event(time_out_event)
 {
 }
 
@@ -118,4 +119,9 @@ void Channel::set_error_cb(std::function<void()> error_cb)
 void Channel::set_write_cb(std::function<void()> write_cb)
 {
     _writeCallback = write_cb;
+}
+
+bool Channel::isTimeout() const
+{
+    return _is_time_out_event;
 }

@@ -6,6 +6,7 @@
 #include "ThreadPool.h"
 #include <map>
 #include <memory>
+#include <mutex>
 
 
 //网络服务类 一个监听的fd和很多客户端连接的fd
@@ -28,6 +29,8 @@ public:
     void set_on_message_cb(std::function<void(ConnectionPtr,std::string message)> fn);
     void set_send_completion_cb(std::function<void(ConnectionPtr)> fn);
     void set_epoll_timeout_cb(std::function<void(EventLoop*)> fn);
+protected:
+    void remove_conn(int fd);
 private:
     std::unique_ptr<EventLoop> _main_loop; //一个TcpServer可能有多个事件循环，主事件循环
     Acceptor _acceptor;//一个TcpServer只有一个Acceptor对象
@@ -35,6 +38,7 @@ private:
     ThreadPool _thread_pool;
     std::vector<std::unique_ptr<EventLoop>> _sub_loops; //存放从事件循环
     std::map<int,ConnectionPtr> _conns;
+    std::mutex _mutex_conns;
     std::function<void(ConnectionPtr)> _new_conncetion_cb;
     std::function<void(ConnectionPtr)> _close_connection_cb;
     std::function<void(ConnectionPtr)> _error_connection_cb;
