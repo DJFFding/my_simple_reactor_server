@@ -37,12 +37,12 @@ void EchoServer::stop()
 
 void EchoServer::handle_new_connection(ConnectionPtr conn)
 {
-    //LOGI()<<"new connection. client fd:"<<conn->fd()<<",addr:("<<conn->ip()<<":"<<conn->port()<<") connect";
+    LOGI()<<Timestamp::now().to_string()<<"new connection. client fd:"<<conn->fd()<<",addr:("<<conn->ip()<<":"<<conn->port()<<") connect";
 }
 
 void EchoServer::handle_close_connection(ConnectionPtr conn)
 {
-    //LOGI()<<"close connection. client fd:"<<conn->fd()<<",addr:("<<conn->ip()<<":"<<conn->port()<<") close";
+    LOGI()<<Timestamp::now().to_string()<<"close connection. client fd:"<<conn->fd()<<",addr:("<<conn->ip()<<":"<<conn->port()<<") close";
 }
 
 void EchoServer::handle_error_connection(ConnectionPtr conn)

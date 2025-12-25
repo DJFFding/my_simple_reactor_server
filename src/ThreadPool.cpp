@@ -29,8 +29,6 @@ ThreadPool::ThreadPool(int thread_num,const std::string&thread_type)
                     _taskqueue.pop();                    
                 }   
                 task(); //执行任务      
-                static int i =0;
-                LOGI()<<_thread_type<<"thread"<<"执行完成"<<++i<<"次任务";  
             }
         });
     }
